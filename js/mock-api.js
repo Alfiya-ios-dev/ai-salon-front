@@ -169,7 +169,9 @@ export async function register({ email, password, business_name, business_phone_
   db.users.push({ email, password, tenant_id, business_name, business_phone_number });
   save();
   const data = { access_token: `mock-token-${tenant_id}-${Date.now()}`, token_type: 'bearer', tenant_id, business_name };
-  saveSession(data);
+  // Сессию НЕ сохраняем здесь — как и реальный backend, register() просто
+  // возвращает ответ, а экран авторизации сам решает, сохранять ли токен
+  // (см. js/screens/auth.js: не считаем, что access_token гарантирован).
   return data;
 }
 

@@ -2,7 +2,7 @@
 // импортируют только этот файл и не знают, обслуживает ли их реальный
 // backend или js/mock-api.js — переключение централизовано здесь, через
 // USE_MOCK_API из js/config.js.
-import { BASE_URL, USE_MOCK_API } from './config.js';
+import { BASE_URL, USE_MOCK_API, REQUEST_TIMEOUT_MS } from './config.js';
 import { ApiError, getToken, saveSession, clearSession, handleUnauthorized } from './session.js';
 import * as mock from './mock-api.js';
 
@@ -27,23 +27,66 @@ function buildQuery(params) {
   return qs ? `?${qs}` : '';
 }
 
-async function request(path, { method = 'GET', body, query, auth = true } = {}) {
+// FastAPI отдаёт ошибки в двух формах:
+//  - {"detail": "строка"}                          — обычный HTTPException (401/403/404/...)
+//  - {"detail": [{"loc":[...], "msg":"...", ...}]}  — 422 Validation Error, detail это МАССИВ
+// (см. схемы HTTPValidationError/ValidationError в openapi.json). Обе формы
+// нужно разбирать явно, иначе 422 покажет пользователю "[object Object]".
+function parseErrorMessage(status, data) {
+  if (typeof data?.detail === 'string') return data.detail;
+  if (Array.isArray(data?.detail)) {
+    const parts = data.detail.map((item) => {
+      const field = Array.isArray(item.loc) ? item.loc.filter((p) => p !== 'body').join('.') : '';
+      return field ? `${field}: ${item.msg}` : item.msg;
+    });
+    if (parts.length) return parts.join('; ');
+  }
+  return FALLBACK_MESSAGES[status] || `Ошибка запроса (${status}).`;
+}
+
+/**
+ * Базовый API-клиент. Все именованные функции ниже (login, listServices, ...)
+ * построены на нём — экраны им пользуются напрямую только в исключительных
+ * случаях (например, если понадобится вызвать ещё не обёрнутый эндпоинт).
+ *
+ * options:
+ *   method   — HTTP-метод, по умолчанию GET
+ *   body     — объект (уйдёт как JSON) или FormData (уйдёт как multipart,
+ *              Content-Type для него нельзя выставлять руками — это делает браузер)
+ *   query    — объект query-параметров, пустые/undefined/null отбрасываются
+ *   auth     — добавлять ли Authorization: Bearer <token> (по умолчанию true)
+ *   timeoutMs— переопределить таймаут запроса (по умолчанию REQUEST_TIMEOUT_MS)
+ */
+export async function apiRequest(path, options = {}) {
+  const { method = 'GET', body, query, auth = true, timeoutMs = REQUEST_TIMEOUT_MS } = options;
+
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
   const headers = {};
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
   try {
     response = await fetch(`${BASE_URL}${path}${buildQuery(query)}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
+      signal: controller.signal,
     });
-  } catch {
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new ApiError('Сервер не отвечает. Попробуйте ещё раз чуть позже.', 0, null);
+    }
     throw new ApiError('Нет соединения с сервером. Проверьте интернет.', 0, null);
+  } finally {
+    clearTimeout(timer);
   }
 
   if (response.status === 204) return null;
@@ -56,10 +99,7 @@ async function request(path, { method = 'GET', body, query, auth = true } = {}) 
   }
 
   if (!response.ok) {
-    const message =
-      typeof data?.detail === 'string'
-        ? data.detail
-        : FALLBACK_MESSAGES[response.status] || `Ошибка запроса (${response.status}).`;
+    const message = parseErrorMessage(response.status, data);
 
     if (response.status === 401) {
       handleUnauthorized();
@@ -74,18 +114,15 @@ async function request(path, { method = 'GET', body, query, auth = true } = {}) 
 // ---- Реальные реализации (используются, когда USE_MOCK_API === false) ----
 
 function realRegister({ email, password, business_name, business_phone_number }) {
-  return request('/api/v1/auth/register', {
+  return apiRequest('/api/v1/auth/register', {
     method: 'POST',
     auth: false,
     body: { email, password, business_name, business_phone_number },
-  }).then((data) => {
-    saveSession(data);
-    return data;
   });
 }
 
 function realLogin({ email, password }) {
-  return request('/api/v1/auth/login', {
+  return apiRequest('/api/v1/auth/login', {
     method: 'POST',
     auth: false,
     body: { email, password },
@@ -96,79 +133,79 @@ function realLogin({ email, password }) {
 }
 
 function realListBookings({ status, dialog_id, staff_id } = {}) {
-  return request('/api/v1/bookings', { query: { status, dialog_id, staff_id } });
+  return apiRequest('/api/v1/bookings', { query: { status, dialog_id, staff_id } });
 }
 function realGetBooking(bookingId) {
-  return request(`/api/v1/bookings/${bookingId}`);
+  return apiRequest(`/api/v1/bookings/${bookingId}`);
 }
 function realCreateBooking(payload) {
-  return request('/api/v1/bookings', { method: 'POST', body: payload });
+  return apiRequest('/api/v1/bookings', { method: 'POST', body: payload });
 }
 function realUpdateBookingStatus(bookingId, status) {
-  return request(`/api/v1/bookings/${bookingId}`, { method: 'PATCH', body: { status } });
+  return apiRequest(`/api/v1/bookings/${bookingId}`, { method: 'PATCH', body: { status } });
 }
 
 function realListServices() {
-  return request('/api/v1/services');
+  return apiRequest('/api/v1/services');
 }
 function realCreateService(payload) {
-  return request('/api/v1/services', { method: 'POST', body: payload });
+  return apiRequest('/api/v1/services', { method: 'POST', body: payload });
 }
 function realDeleteService(serviceId) {
-  return request(`/api/v1/services/${serviceId}`, { method: 'DELETE' });
+  return apiRequest(`/api/v1/services/${serviceId}`, { method: 'DELETE' });
 }
 
 function realListStaff() {
-  return request('/api/v1/staff');
+  return apiRequest('/api/v1/staff');
 }
 function realCreateStaff(payload) {
-  return request('/api/v1/staff', { method: 'POST', body: payload });
+  return apiRequest('/api/v1/staff', { method: 'POST', body: payload });
 }
 function realUpdateStaff(staffId, payload) {
-  return request(`/api/v1/staff/${staffId}`, { method: 'PATCH', body: payload });
+  return apiRequest(`/api/v1/staff/${staffId}`, { method: 'PATCH', body: payload });
 }
 function realAssignServiceToStaff(staffId, serviceId) {
-  return request(`/api/v1/staff/${staffId}/services/${serviceId}`, { method: 'POST' });
+  return apiRequest(`/api/v1/staff/${staffId}/services/${serviceId}`, { method: 'POST' });
 }
 function realUnassignServiceFromStaff(staffId, serviceId) {
-  return request(`/api/v1/staff/${staffId}/services/${serviceId}`, { method: 'DELETE' });
+  return apiRequest(`/api/v1/staff/${staffId}/services/${serviceId}`, { method: 'DELETE' });
 }
 
 function realListStaffSchedule(staffId) {
-  return request(`/api/v1/staff/${staffId}/schedule`);
+  return apiRequest(`/api/v1/staff/${staffId}/schedule`);
 }
 function realCreateStaffScheduleDay(staffId, payload) {
-  return request(`/api/v1/staff/${staffId}/schedule`, { method: 'POST', body: payload });
+  return apiRequest(`/api/v1/staff/${staffId}/schedule`, { method: 'POST', body: payload });
 }
 function realDeleteStaffScheduleDay(staffId, scheduleId) {
-  return request(`/api/v1/staff/${staffId}/schedule/${scheduleId}`, { method: 'DELETE' });
+  return apiRequest(`/api/v1/staff/${staffId}/schedule/${scheduleId}`, { method: 'DELETE' });
 }
 
 function realGetAvailableSlots({ service_id, date, staff_id } = {}) {
-  return request('/api/v1/slots/available', { query: { service_id, date, staff_id } });
+  return apiRequest('/api/v1/slots/available', { query: { service_id, date, staff_id } });
 }
 
 function realGetPrompts() {
-  return request('/api/v1/prompts');
+  return apiRequest('/api/v1/prompts');
 }
 function realUpdatePrompts(payload) {
-  return request('/api/v1/prompts', { method: 'PUT', body: payload });
+  return apiRequest('/api/v1/prompts', { method: 'PUT', body: payload });
 }
 
 function realListBusinessInfo() {
-  return request('/api/v1/business-info');
+  return apiRequest('/api/v1/business-info');
 }
 function realCreateBusinessInfo(payload) {
-  return request('/api/v1/business-info', { method: 'POST', body: payload });
+  return apiRequest('/api/v1/business-info', { method: 'POST', body: payload });
 }
 function realGetBusinessInfo(key) {
-  return request(`/api/v1/business-info/${encodeURIComponent(key)}`);
+  return apiRequest(`/api/v1/business-info/${encodeURIComponent(key)}`);
 }
 function realUpsertBusinessInfo(key, value) {
-  return request(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'PUT', body: { value } });
+  return apiRequest(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'PUT', body: { value } });
 }
 function realDeleteBusinessInfo(key) {
-  return request(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'DELETE' });
+  return apiRequest(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'DELETE' });
 }
 
 // ---- Переключатель real/mock ----
@@ -191,6 +228,9 @@ function notImplementedOnBackend(name) {
 }
 
 // ---- Auth ----
+// Регистрация по схеме TokenResponse ДОЛЖНА вернуть access_token, но экран
+// (js/screens/auth.js) всё равно не считает это гарантией и проверяет
+// реальный ответ перед тем, как сохранять сессию — так безопаснее.
 export const register = pick(realRegister, mock.register);
 export const login = pick(realLogin, mock.login);
 export function logout() {
