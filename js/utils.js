@@ -66,6 +66,25 @@ export function renderErrorState(container, { title = 'Не удалось за�
   );
 }
 
+// Раздел технически работает (форма и запросы есть), но backend ещё не даёт
+// для него эндпоинтов — api.js в этом случае кидает ApiError(status: 501)
+// вместо реального сетевого запроса. Показываем это как "в разработке", а не
+// как сбой сети — retry здесь бессмысленен, эндпоинта всё равно нет.
+export function isNotImplementedError(err) {
+  return err?.status === 501;
+}
+
+export function renderNotImplementedState(container, { title = 'Раздел в разработке', text = '' } = {}) {
+  container.innerHTML = '';
+  container.appendChild(
+    h('div', { class: 'state-block', role: 'status' }, [
+      h('div', { class: 'state-block__icon' }, '🚧'),
+      h('div', { class: 'state-block__title' }, title),
+      text ? h('div', { class: 'state-block__text' }, text) : null,
+    ])
+  );
+}
+
 // ==================== Modal ====================
 export function openModal({ title, body, actions = [] }) {
   const root = document.getElementById('modal-root');

@@ -3,7 +3,17 @@
 // эндпоинта). Работает только через js/mock-api.js. См. комментарий в начале
 // mock-api.js.
 import * as api from '../api.js';
-import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState, formatDateTime } from '../utils.js';
+import {
+  h,
+  showToast,
+  confirmModal,
+  renderSkeletonCards,
+  renderEmptyState,
+  renderErrorState,
+  renderNotImplementedState,
+  isNotImplementedError,
+  formatDateTime,
+} from '../utils.js';
 
 const CATEGORIES = ['Прайс-лист', 'Политика', 'FAQ', 'Инструкция', 'Другое'];
 const STATUS_BADGE = { active: 'success', archived: 'neutral' };
@@ -58,7 +68,7 @@ export async function renderDocuments(container) {
       form.reset();
       await load();
     } catch (err) {
-      showToast(err.message);
+      showToast(isNotImplementedError(err) ? 'Раздел «Документы» пока в разработке на сервере.' : err.message);
     } finally {
       submitBtn.disabled = false;
     }
@@ -94,7 +104,7 @@ export async function renderDocuments(container) {
                   showToast('Документ удалён.', 'success');
                   await load();
                 } catch (err) {
-                  showToast(err.message);
+                  showToast(isNotImplementedError(err) ? 'Раздел «Документы» пока в разработке на сервере.' : err.message);
                 }
               },
             }, 'Удалить'),
@@ -104,13 +114,24 @@ export async function renderDocuments(container) {
     });
   }
 
+  function setFormDisabled(disabled) {
+    submitBtn.disabled = disabled;
+    submitBtn.title = disabled ? 'Раздел пока в разработке на сервере' : '';
+  }
+
   async function load() {
     renderSkeletonCards(listEl, 3);
     try {
       const documents = await api.listDocuments();
+      setFormDisabled(false);
       renderList(documents);
     } catch (err) {
-      renderErrorState(listEl, { text: err.message, onRetry: load });
+      if (isNotImplementedError(err)) {
+        setFormDisabled(true);
+        renderNotImplementedState(listEl, { text: 'Документы и загрузка файлов пока не поддерживаются backend. Мы уже работаем над этим.' });
+      } else {
+        renderErrorState(listEl, { text: err.message, onRetry: load });
+      }
     }
   }
 

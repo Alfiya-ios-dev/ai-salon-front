@@ -1,7 +1,16 @@
 // ЭКСПЕРИМЕНТАЛЬНАЯ СТРАНИЦА: в реальном openapi.json нет эндпоинтов
 // /stop-categories. Работает только через js/mock-api.js.
 import * as api from '../api.js';
-import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState } from '../utils.js';
+import {
+  h,
+  showToast,
+  confirmModal,
+  renderSkeletonCards,
+  renderEmptyState,
+  renderErrorState,
+  renderNotImplementedState,
+  isNotImplementedError,
+} from '../utils.js';
 
 export async function renderStopCategories(container) {
   container.appendChild(
@@ -40,7 +49,7 @@ export async function renderStopCategories(container) {
       form.reset();
       await load();
     } catch (err) {
-      showToast(err.message);
+      showToast(isNotImplementedError(err) ? 'Раздел «Стоп-категории» пока в разработке на сервере.' : err.message);
     } finally {
       submitBtn.disabled = false;
     }
@@ -66,7 +75,7 @@ export async function renderStopCategories(container) {
                 showToast(is_active ? 'Категория включена.' : 'Категория выключена.', 'success');
               } catch (err) {
                 e.target.checked = !is_active;
-                showToast(err.message);
+                showToast(isNotImplementedError(err) ? 'Раздел «Стоп-категории» пока в разработке на сервере.' : err.message);
               }
             },
           }),
@@ -90,7 +99,7 @@ export async function renderStopCategories(container) {
                   showToast('Удалено.', 'success');
                   await load();
                 } catch (err) {
-                  showToast(err.message);
+                  showToast(isNotImplementedError(err) ? 'Раздел «Стоп-категории» пока в разработке на сервере.' : err.message);
                 }
               },
             }, 'Удалить'),
@@ -100,13 +109,24 @@ export async function renderStopCategories(container) {
     });
   }
 
+  function setFormDisabled(disabled) {
+    submitBtn.disabled = disabled;
+    submitBtn.title = disabled ? 'Раздел пока в разработке на сервере' : '';
+  }
+
   async function load() {
     renderSkeletonCards(listEl, 3);
     try {
       const items = await api.listStopCategories();
+      setFormDisabled(false);
       renderList(items);
     } catch (err) {
-      renderErrorState(listEl, { text: err.message, onRetry: load });
+      if (isNotImplementedError(err)) {
+        setFormDisabled(true);
+        renderNotImplementedState(listEl, { text: 'Стоп-категории пока не поддерживаются backend. Мы уже работаем над этим.' });
+      } else {
+        renderErrorState(listEl, { text: err.message, onRetry: load });
+      }
     }
   }
 

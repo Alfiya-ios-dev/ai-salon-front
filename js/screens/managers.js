@@ -2,7 +2,17 @@
 // /managers (пользователи самой админ-панели). Работает только через
 // js/mock-api.js.
 import * as api from '../api.js';
-import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState, formatDateTime } from '../utils.js';
+import {
+  h,
+  showToast,
+  confirmModal,
+  renderSkeletonCards,
+  renderEmptyState,
+  renderErrorState,
+  renderNotImplementedState,
+  isNotImplementedError,
+  formatDateTime,
+} from '../utils.js';
 
 const ROLES = ['owner', 'admin', 'manager'];
 const ROLE_LABEL = { owner: 'Владелец', admin: 'Администратор', manager: 'Менеджер' };
@@ -47,7 +57,7 @@ export async function renderManagers(container) {
       form.reset();
       await load();
     } catch (err) {
-      showToast(err.message);
+      showToast(isNotImplementedError(err) ? 'Раздел «Менеджеры» пока в разработке на сервере.' : err.message);
     } finally {
       submitBtn.disabled = false;
     }
@@ -77,7 +87,7 @@ export async function renderManagers(container) {
                 showToast(is_active ? 'Доступ включён.' : 'Доступ отключён.', 'success');
                 await load();
               } catch (err) {
-                showToast(err.message);
+                showToast(isNotImplementedError(err) ? 'Раздел «Менеджеры» пока в разработке на сервере.' : err.message);
               }
             },
           }, m.is_active ? 'Отключить' : 'Включить'),
@@ -91,7 +101,7 @@ export async function renderManagers(container) {
                 showToast('Удалено.', 'success');
                 await load();
               } catch (err) {
-                showToast(err.message);
+                showToast(isNotImplementedError(err) ? 'Раздел «Менеджеры» пока в разработке на сервере.' : err.message);
               }
             },
           }, 'Удалить'),
@@ -116,13 +126,24 @@ export async function renderManagers(container) {
     listEl.appendChild(tableWrap);
   }
 
+  function setFormDisabled(disabled) {
+    submitBtn.disabled = disabled;
+    submitBtn.title = disabled ? 'Раздел пока в разработке на сервере' : '';
+  }
+
   async function load() {
     renderSkeletonCards(listEl, 3);
     try {
       const managers = await api.listManagers();
+      setFormDisabled(false);
       renderList(managers);
     } catch (err) {
-      renderErrorState(listEl, { text: err.message, onRetry: load });
+      if (isNotImplementedError(err)) {
+        setFormDisabled(true);
+        renderNotImplementedState(listEl, { text: 'Управление менеджерами пока не поддерживается backend. Мы уже работаем над этим.' });
+      } else {
+        renderErrorState(listEl, { text: err.message, onRetry: load });
+      }
     }
   }
 

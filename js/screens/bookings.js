@@ -23,14 +23,31 @@ export async function renderBookings(container) {
   async function load() {
     renderSkeletonCards(bodyEl, 4);
     try {
-      const bookings = await api.listBookings({ status: statusFilter.value || undefined });
-      renderList(bookings);
+      // Мастера и услуги подтягиваем отдельно от списка броней: если один из
+      // этих справочников недоступен (ошибка/пусто), брони всё равно должны
+      // отрендериться — просто с fallback на #ID вместо имени.
+      const [bookingsResult, staffResult, servicesResult] = await Promise.allSettled([
+        api.listBookings({ status: statusFilter.value || undefined }),
+        api.listStaff(),
+        api.listServices(),
+      ]);
+
+      if (bookingsResult.status === 'rejected') throw bookingsResult.reason;
+
+      const staffMap = new Map(
+        (staffResult.status === 'fulfilled' ? staffResult.value : []).map((s) => [s.id, s.name])
+      );
+      const serviceMap = new Map(
+        (servicesResult.status === 'fulfilled' ? servicesResult.value : []).map((s) => [s.id, s.name])
+      );
+
+      renderList(bookingsResult.value, staffMap, serviceMap);
     } catch (err) {
       renderErrorState(bodyEl, { text: err.message, onRetry: load });
     }
   }
 
-  function renderList(bookings) {
+  function renderList(bookings, staffMap, serviceMap) {
     bodyEl.innerHTML = '';
     if (!bookings.length) {
       renderEmptyState(bodyEl, { icon: '📅', title: 'Бронирований нет', text: 'Здесь появятся записи клиентов.' });
@@ -72,11 +89,14 @@ export async function renderBookings(container) {
 
       const badge = h('span', { class: `badge badge--${STATUS_BADGE[booking.status]}` }, booking.status);
 
+      const staffName = staffMap.get(booking.staff_id) ?? `#${booking.staff_id}`;
+      const serviceName = serviceMap.get(booking.service_id) ?? `#${booking.service_id}`;
+
       return h('tr', {}, [
         h('td', {}, h('span', { class: 'booking-client' }, booking.client_name)),
         h('td', {}, booking.client_phone),
         h('td', {}, h('span', { class: 'booking-datetime' }, formatDateTime(booking.booking_datetime))),
-        h('td', {}, `#${booking.staff_id} / #${booking.service_id}`),
+        h('td', {}, `${staffName} / ${serviceName}`),
         h('td', {}, [badge, statusSelect]),
       ]);
     });
