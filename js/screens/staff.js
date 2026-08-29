@@ -1,24 +1,26 @@
 import * as api from '../api.js';
 import { h, showToast, renderSkeletonCards, renderEmptyState, renderErrorState } from '../utils.js';
-import { getState, setState } from '../state.js';
+import { getState, setState, getLabels } from '../state.js';
 import { navigate } from '../router.js';
 
 export async function renderStaff(container) {
+  const { staff_label_singular, staff_label_plural } = getLabels();
+
   container.appendChild(
     h('div', { class: 'page-header' }, [
-      h('div', { class: 'page-header__text' }, [h('h1', {}, 'Мастера'), h('p', {}, 'Сотрудники и услуги, которые они выполняют')]),
+      h('div', { class: 'page-header__text' }, [h('h1', {}, staff_label_plural), h('p', {}, 'Сотрудники и услуги, которые они выполняют')]),
     ])
   );
 
-  const formCard = h('div', { class: 'card' }, [h('h2', { class: 'section-title', style: 'margin-top:0' }, 'Новый сотрудник')]);
+  const formCard = h('div', { class: 'card' }, [h('h2', { class: 'section-title', style: 'margin-top:0' }, `Новый ${staff_label_singular.toLowerCase()}`)]);
   const listEl = h('div', { class: 'data-list' });
   container.appendChild(formCard);
   container.appendChild(listEl);
 
   function renderForm() {
     const nameInput = h('input', { id: 'staff-name', type: 'text', class: 'input', required: true });
-    const roleInput = h('input', { id: 'staff-role', type: 'text', class: 'input', required: true, placeholder: 'например, Мастер по волосам' });
-    const submitBtn = h('button', { type: 'submit', class: 'btn btn--primary' }, 'Добавить сотрудника');
+    const roleInput = h('input', { id: 'staff-role', type: 'text', class: 'input', required: true, placeholder: `например, ${staff_label_singular} по волосам` });
+    const submitBtn = h('button', { type: 'submit', class: 'btn btn--primary' }, `Добавить ${staff_label_singular.toLowerCase()}`);
 
     const form = h('form', { class: 'form-grid form-grid--2col', novalidate: true }, [
       h('div', { class: 'field' }, [h('label', { class: 'field__label', for: 'staff-name' }, 'Имя'), nameInput]),
@@ -31,7 +33,7 @@ export async function renderStaff(container) {
       submitBtn.disabled = true;
       try {
         await api.createStaff({ name: nameInput.value.trim(), role: roleInput.value.trim() });
-        showToast('Сотрудник добавлен.', 'success');
+        showToast(`${staff_label_singular} добавлен.`, 'success');
         await load();
       } catch (err) {
         showToast(err.message);
@@ -48,7 +50,11 @@ export async function renderStaff(container) {
     const { staff, services } = getState();
     listEl.innerHTML = '';
     if (!staff.length) {
-      renderEmptyState(listEl, { icon: '🧑‍💼', title: 'Сотрудников пока нет', text: 'Добавьте первого мастера формой выше.' });
+      renderEmptyState(listEl, {
+        icon: '🧑‍💼',
+        title: `${staff_label_plural} пока нет`,
+        text: `Добавьте первого ${staff_label_singular.toLowerCase()} формой выше.`,
+      });
       return;
     }
 

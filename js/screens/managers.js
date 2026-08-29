@@ -1,6 +1,8 @@
-// ЭКСПЕРИМЕНТАЛЬНАЯ СТРАНИЦА: в реальном openapi.json нет эндпоинтов
-// /managers (пользователи самой админ-панели). Работает только через
-// js/mock-api.js.
+// Список/создание/удаление идут на реальный backend (GET/POST/DELETE
+// /api/v1/managers, см. js/api.js). Включение/отключение доступа — пока
+// mock-only: PATCH-эндпоинт для него не специфицирован, поэтому
+// updateManager в реальном режиме кидает ApiError(501), которую перехватывает
+// isNotImplementedError() ниже.
 import * as api from '../api.js';
 import {
   h,
@@ -22,13 +24,6 @@ export async function renderManagers(container) {
   container.appendChild(
     h('div', { class: 'page-header' }, [
       h('div', { class: 'page-header__text' }, [h('h1', {}, 'Менеджеры'), h('p', {}, 'Кто имеет доступ к этой админ-панели')]),
-    ])
-  );
-
-  container.appendChild(
-    h('div', { class: 'mock-banner' }, [
-      h('span', { 'aria-hidden': 'true' }, '🧪'),
-      h('span', {}, 'Экспериментальный раздел: управление доступом менеджеров ещё не реализовано на backend, страница работает только в mock-режиме.'),
     ])
   );
 

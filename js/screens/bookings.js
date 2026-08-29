@@ -89,7 +89,12 @@ export async function renderBookings(container) {
 
       const badge = h('span', { class: `badge badge--${STATUS_BADGE[booking.status]}` }, booking.status);
 
-      const staffName = staffMap.get(booking.staff_id) ?? `#${booking.staff_id}`;
+      // Везде в проекте (mock-api.js, api.js, openapi.json на момент
+      // последней проверки) поле называется staff_id. master_id — fallback
+      // на случай, если обновлённый backend использует другое имя поля; не
+      // проверено вживую (нет сетевого доступа к backend из этой сессии).
+      const staffId = booking.staff_id ?? booking.master_id;
+      const staffName = staffMap.get(staffId) ?? `#${staffId}`;
       const serviceName = serviceMap.get(booking.service_id) ?? `#${booking.service_id}`;
 
       return h('tr', {}, [

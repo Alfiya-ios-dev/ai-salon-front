@@ -1,8 +1,10 @@
-// ЭКСПЕРИМЕНТАЛЬНАЯ СТРАНИЦА: в реальном openapi.json нет эндпоинтов для
-// документов и нет загрузки файлов вообще (ни одного multipart/form-data
-// эндпоинта). Работает только через js/mock-api.js. См. комментарий в начале
-// mock-api.js.
+// Реальный backend принимает RAG-файлы через multipart/form-data
+// (POST /api/v1/documents/upload — см. realUploadDocument в js/api.js).
+// Если на момент вызова эндпоинта ещё нет, api.js кидает ApiError(status:501)
+// и страница мягко откатывается на renderNotImplementedState() ниже — так что
+// код тут не завязан на то, действительно ли backend уже задеплоил upload.
 import * as api from '../api.js';
+import { USE_MOCK_API } from '../config.js';
 import {
   h,
   showToast,
@@ -26,23 +28,20 @@ export async function renderDocuments(container) {
     ])
   );
 
-  container.appendChild(
-    h('div', { class: 'mock-banner' }, [
-      h('span', { 'aria-hidden': 'true' }, '🧪'),
-      h('span', {}, 'Экспериментальный раздел: эндпоинтов для документов и загрузки файлов ещё нет в реальном backend, страница работает только в mock-режиме.'),
-    ])
-  );
-
   const titleInput = h('input', { id: 'doc-title', type: 'text', class: 'input', required: true });
   const categorySelect = h('select', { id: 'doc-category', class: 'select' }, CATEGORIES.map((c) => h('option', { value: c }, c)));
-  const fileInput = h('input', { id: 'doc-file', type: 'file', class: 'input' });
+  const fileInput = h('input', { id: 'doc-file', type: 'file', class: 'input', required: !USE_MOCK_API });
   const descInput = h('textarea', { id: 'doc-description', class: 'textarea' });
   const submitBtn = h('button', { type: 'submit', class: 'btn btn--primary' }, 'Добавить документ');
 
   const form = h('form', { class: 'form-grid form-grid--2col', novalidate: true }, [
     h('div', { class: 'field' }, [h('label', { class: 'field__label', for: 'doc-title' }, 'Название'), titleInput]),
     h('div', { class: 'field' }, [h('label', { class: 'field__label', for: 'doc-category' }, 'Категория'), categorySelect]),
-    h('div', { class: 'field' }, [h('label', { class: 'field__label', for: 'doc-file' }, 'Файл'), fileInput, h('span', { class: 'field__hint' }, 'Загрузка эмулируется локально, файл никуда не отправляется.')]),
+    h('div', { class: 'field' }, [
+      h('label', { class: 'field__label', for: 'doc-file' }, 'Файл'),
+      fileInput,
+      h('span', { class: 'field__hint' }, USE_MOCK_API ? 'Загрузка эмулируется локально, файл никуда не отправляется.' : 'Файл загружается в базу знаний бота (RAG).'),
+    ]),
     h('div', { class: 'field' }, [h('label', { class: 'field__label', for: 'doc-description' }, 'Описание')]),
     h('div', { class: 'field', style: 'grid-column: 1 / -1' }, [descInput]),
     h('div', { class: 'form-actions', style: 'grid-column: 1 / -1' }, [submitBtn]),
@@ -54,15 +53,18 @@ export async function renderDocuments(container) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const file = fileInput.files[0];
+    const file = fileInput.files[0] || null;
+    if (!USE_MOCK_API && !file) {
+      showToast('Выберите файл для загрузки.');
+      return;
+    }
     submitBtn.disabled = true;
     try {
       await api.createDocument({
         title: titleInput.value.trim(),
         category: categorySelect.value,
-        file_name: file ? file.name : 'без файла',
-        file_size_kb: file ? Math.max(1, Math.round(file.size / 1024)) : 0,
         description: descInput.value.trim() || null,
+        file,
       });
       showToast('Документ добавлен.', 'success');
       form.reset();
@@ -81,17 +83,22 @@ export async function renderDocuments(container) {
       return;
     }
     documents.forEach((doc) => {
+      // Поля file_name/file_size_kb/uploaded_at/status подтверждены только
+      // для mock-схемы (js/mock-api.js:443) — реальный ответ /api/v1/documents
+      // не проверен (нет доступа к живому openapi.json), поэтому рендерим
+      // защитно, с fallback вместо падения на отсутствующем поле.
+      const ext = doc.file_name ? doc.file_name.split('.').pop().slice(0, 3).toUpperCase() : '📄';
       listEl.appendChild(
         h('div', { class: 'data-card' }, [
           h('div', { class: 'data-card__row' }, [
             h('div', { style: 'display:flex;align-items:center;gap:12px' }, [
-              h('span', { class: 'doc-icon', 'aria-hidden': 'true' }, doc.file_name.split('.').pop().slice(0, 3).toUpperCase()),
+              h('span', { class: 'doc-icon', 'aria-hidden': 'true' }, ext),
               h('span', { class: 'data-card__title' }, doc.title),
             ]),
-            h('span', { class: `badge badge--${STATUS_BADGE[doc.status] || 'neutral'}` }, STATUS_LABEL[doc.status] || doc.status),
+            doc.status ? h('span', { class: `badge badge--${STATUS_BADGE[doc.status] || 'neutral'}` }, STATUS_LABEL[doc.status] || doc.status) : null,
           ]),
-          h('div', { class: 'data-card__meta' }, `${doc.category} · ${doc.file_name} · ${doc.file_size_kb} КБ`),
-          h('div', { class: 'data-card__meta' }, `Загружен: ${formatDateTime(doc.uploaded_at)}`),
+          h('div', { class: 'data-card__meta' }, [doc.category, doc.file_name, doc.file_size_kb != null ? `${doc.file_size_kb} КБ` : null].filter(Boolean).join(' · ')),
+          doc.uploaded_at ? h('div', { class: 'data-card__meta' }, `Загружен: ${formatDateTime(doc.uploaded_at)}`) : null,
           doc.description ? h('div', { class: 'data-card__meta' }, doc.description) : null,
           h('div', { class: 'data-card__actions' }, [
             h('button', {

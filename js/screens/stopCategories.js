@@ -1,5 +1,8 @@
-// ЭКСПЕРИМЕНТАЛЬНАЯ СТРАНИЦА: в реальном openapi.json нет эндпоинтов
-// /stop-categories. Работает только через js/mock-api.js.
+// Список/создание/удаление идут на реальный backend (GET/POST/DELETE
+// /api/v1/stop-categories, см. js/api.js). Переключатель is_active — пока
+// mock-only: PATCH-эндпоинт для него не специфицирован, поэтому
+// updateStopCategory в реальном режиме кидает ApiError(501), которую
+// перехватывает isNotImplementedError() ниже.
 import * as api from '../api.js';
 import {
   h,
@@ -16,13 +19,6 @@ export async function renderStopCategories(container) {
   container.appendChild(
     h('div', { class: 'page-header' }, [
       h('div', { class: 'page-header__text' }, [h('h1', {}, 'Стоп-категории'), h('p', {}, 'Темы, которые бот не должен обсуждать или предлагать')]),
-    ])
-  );
-
-  container.appendChild(
-    h('div', { class: 'mock-banner' }, [
-      h('span', { 'aria-hidden': 'true' }, '🧪'),
-      h('span', {}, 'Экспериментальный раздел: контракт со stop-категориями с backend ещё не согласован, страница работает только в mock-режиме.'),
     ])
   );
 

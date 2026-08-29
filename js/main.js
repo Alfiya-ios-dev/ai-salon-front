@@ -1,9 +1,9 @@
 import { registerRoute, initRouter, navigate } from './router.js';
-import { isAuthenticated, getState } from './state.js';
+import { isAuthenticated, getState, subscribe, loadBusinessLabels, resetSessionState } from './state.js';
 import { logout } from './api.js';
 import { USE_MOCK_API } from './config.js';
 import { h } from './utils.js';
-import { NAV_GROUPS, BOTTOM_NAV_ITEMS, pageTitleFor } from './nav.js';
+import { getNavGroups, getBottomNavItems, pageTitleFor } from './nav.js';
 
 import { renderAuth } from './screens/auth.js';
 import { renderBookings } from './screens/bookings.js';
@@ -53,7 +53,7 @@ function renderSidebar(currentPath) {
   sidebar.appendChild(
     h('div', { class: 'sidebar__logo' }, [h('span', { class: 'sidebar__logo-mark' }, 'S'), 'Salon Admin'])
   );
-  NAV_GROUPS.forEach((group) => {
+  getNavGroups().forEach((group) => {
     sidebar.appendChild(h('div', { class: 'sidebar__group-label' }, group.label));
     sidebar.appendChild(h('nav', { class: 'sidebar__nav' }, group.items.map((item) => buildNavLink(item, currentPath))));
   });
@@ -66,7 +66,7 @@ function renderSidebar(currentPath) {
 
 function renderBottomNav(currentPath) {
   bottomNav.innerHTML = '';
-  BOTTOM_NAV_ITEMS.forEach((item) => {
+  getBottomNavItems().forEach((item) => {
     const active = currentPath === item.path;
     bottomNav.appendChild(
       h('a', { href: item.path, class: `bottom-nav__item ${active ? 'bottom-nav__item--active' : ''}` }, [
@@ -92,7 +92,7 @@ function renderDrawer(currentPath) {
       h('button', { class: 'btn btn--icon', onClick: closeDrawer, 'aria-label': 'Закрыть меню' }, '✕'),
     ])
   );
-  NAV_GROUPS.forEach((group) => {
+  getNavGroups().forEach((group) => {
     mobileDrawer.appendChild(h('div', { class: 'sidebar__group-label' }, group.label));
     mobileDrawer.appendChild(
       h('nav', { class: 'sidebar__nav' }, group.items.map((item) => buildNavLink(item, currentPath, closeDrawer)))
@@ -121,6 +121,7 @@ function renderHeader(currentPath) {
 
 function doLogout() {
   logout();
+  resetSessionState();
   closeDrawer();
   navigate('#/auth');
   renderChrome();
@@ -143,12 +144,39 @@ function renderChrome() {
     return;
   }
 
+  // Метки терминологии ("Мастера" -> staff_label_plural и т.д.) подтягиваем
+  // один раз за сессию: loadBusinessLabels() выставляет labelsLoaded=true,
+  // после чего эта ветка больше не сработает.
+  if (!getState().labelsLoaded) {
+    loadBusinessLabels();
+  }
+
   renderSidebar(hashPath);
   renderBottomNav(hashPath);
   renderDrawer(hashPath);
   renderHeader(hashPath);
   closeDrawer();
 }
+
+// Обновляет только содержимое меню/шапки под текущий hash, БЕЗ closeDrawer() —
+// в отличие от renderChrome() это безопасно вызывать в фоне (например, когда
+// подгрузились/поменялись labels), не выталкивая пользователя из открытой
+// мобильной шторки меню посреди взаимодействия.
+function refreshChromeLabels() {
+  if (!isAuthenticated()) return;
+  const currentPath = window.location.hash.replace(/^#/, '') || '/auth';
+  const hashPath = `#${currentPath}`;
+  renderSidebar(hashPath);
+  renderBottomNav(hashPath);
+  renderDrawer(hashPath);
+  renderHeader(hashPath);
+}
+
+// loadBusinessLabels() дергается из renderChrome() выше (после логина/на
+// старте) и из формы терминологии в "О бизнесе" (после сохранения) — оба
+// раза state.js:setState() уведомит эту подписку, и меню/шапка подхватят
+// новые подписи без навигации.
+subscribe(refreshChromeLabels);
 
 drawerOverlay.addEventListener('click', closeDrawer);
 

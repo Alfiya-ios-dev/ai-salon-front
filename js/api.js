@@ -208,6 +208,44 @@ function realDeleteBusinessInfo(key) {
   return apiRequest(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'DELETE' });
 }
 
+function realListDocuments() {
+  return apiRequest('/api/v1/documents');
+}
+// RAG-файл — реальный upload через multipart/form-data, а не JSON с
+// метаданными (как раньше в mock-режиме). apiRequest сам не проставляет
+// Content-Type для FormData — это делает браузер вместе с multipart boundary.
+function realUploadDocument({ title, category, description, file }) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (title) formData.append('title', title);
+  if (category) formData.append('category', category);
+  if (description) formData.append('description', description);
+  return apiRequest('/api/v1/documents/upload', { method: 'POST', body: formData });
+}
+function realDeleteDocument(documentId) {
+  return apiRequest(`/api/v1/documents/${documentId}`, { method: 'DELETE' });
+}
+
+function realListStopCategories() {
+  return apiRequest('/api/v1/stop-categories');
+}
+function realCreateStopCategory(payload) {
+  return apiRequest('/api/v1/stop-categories', { method: 'POST', body: payload });
+}
+function realDeleteStopCategory(id) {
+  return apiRequest(`/api/v1/stop-categories/${id}`, { method: 'DELETE' });
+}
+
+function realListManagers() {
+  return apiRequest('/api/v1/managers');
+}
+function realCreateManager(payload) {
+  return apiRequest('/api/v1/managers', { method: 'POST', body: payload });
+}
+function realDeleteManager(id) {
+  return apiRequest(`/api/v1/managers/${id}`, { method: 'DELETE' });
+}
+
 // ---- Переключатель real/mock ----
 
 function pick(realFn, mockFn) {
@@ -274,19 +312,39 @@ export const getBusinessInfo = pick(realGetBusinessInfo, mock.getBusinessInfo);
 export const upsertBusinessInfo = pick(realUpsertBusinessInfo, mock.upsertBusinessInfo);
 export const deleteBusinessInfo = pick(realDeleteBusinessInfo, mock.deleteBusinessInfo);
 
-// ---- Экспериментальные сущности: только mock, нет реального backend ----
-export const listDocuments = pick(notImplementedOnBackend('listDocuments'), mock.listDocuments);
-export const createDocument = pick(notImplementedOnBackend('createDocument'), mock.createDocument);
-export const deleteDocument = pick(notImplementedOnBackend('deleteDocument'), mock.deleteDocument);
+// ---- Документы (RAG-файлы) ----
+export const listDocuments = pick(realListDocuments, mock.listDocuments);
+// mock и real ждут разный payload: mock хранит уже посчитанные file_name/
+// file_size_kb (см. js/mock-api.js:443), а real грузит настоящий File через
+// multipart/form-data — поэтому здесь явный маппинг вместо generic pick().
+export function createDocument({ title, category, description, file }) {
+  if (USE_MOCK_API) {
+    return mock.createDocument({
+      title,
+      category,
+      description: description || null,
+      file_name: file ? file.name : 'без файла',
+      file_size_kb: file ? Math.max(1, Math.round(file.size / 1024)) : 0,
+    });
+  }
+  return realUploadDocument({ title, category, description, file });
+}
+export const deleteDocument = pick(realDeleteDocument, mock.deleteDocument);
 
-export const listStopCategories = pick(notImplementedOnBackend('listStopCategories'), mock.listStopCategories);
-export const createStopCategory = pick(notImplementedOnBackend('createStopCategory'), mock.createStopCategory);
+// ---- Стоп-категории ----
+export const listStopCategories = pick(realListStopCategories, mock.listStopCategories);
+export const createStopCategory = pick(realCreateStopCategory, mock.createStopCategory);
+// Backend пока даёт только GET/POST/DELETE для стоп-категорий — PATCH/PUT
+// для переключателя активности не специфицирован, поэтому это остаётся
+// mock-only до появления эндпоинта.
 export const updateStopCategory = pick(notImplementedOnBackend('updateStopCategory'), mock.updateStopCategory);
-export const deleteStopCategory = pick(notImplementedOnBackend('deleteStopCategory'), mock.deleteStopCategory);
+export const deleteStopCategory = pick(realDeleteStopCategory, mock.deleteStopCategory);
 
-export const listManagers = pick(notImplementedOnBackend('listManagers'), mock.listManagers);
-export const createManager = pick(notImplementedOnBackend('createManager'), mock.createManager);
+// ---- Менеджеры ----
+export const listManagers = pick(realListManagers, mock.listManagers);
+export const createManager = pick(realCreateManager, mock.createManager);
+// Аналогично: включение/отключение доступа менеджера ждёт PATCH-эндпоинт.
 export const updateManager = pick(notImplementedOnBackend('updateManager'), mock.updateManager);
-export const deleteManager = pick(notImplementedOnBackend('deleteManager'), mock.deleteManager);
+export const deleteManager = pick(realDeleteManager, mock.deleteManager);
 
 export const session = { getToken, saveSession, clearSession };

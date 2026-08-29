@@ -1,13 +1,73 @@
 import * as api from '../api.js';
 import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState } from '../utils.js';
+import { DEFAULT_LABELS, loadBusinessLabels } from '../state.js';
+
+// Ключи меток терминологии — та же key/value модель business-info, что и
+// произвольные address/phone/working_hours (см. js/mock-api.js:104), поэтому
+// сохраняем их через тот же api.upsertBusinessInfo(key, value) по одному
+// PUT-запросу на ключ, а не отдельным batch-эндпоинтом.
+const LABEL_FIELDS = [
+  { key: 'industry_type', label: 'Тип индустрии', hint: 'Например: beauty, auto_service, medical' },
+  { key: 'staff_label_singular', label: 'Сотрудник (ед. число)', hint: 'Например: Мастер, Автомеханик, Врач' },
+  { key: 'staff_label_plural', label: 'Сотрудники (мн. число)', hint: 'Например: Мастера, Автомеханики, Врачи' },
+  { key: 'service_label', label: 'Услуга', hint: 'Например: Услуга, Ремонт, Приём' },
+];
 
 export async function renderBusinessInfo(container) {
   container.appendChild(
     h('div', { class: 'page-header' }, [
-      h('div', { class: 'page-header__text' }, [h('h1', {}, 'О бизнесе'), h('p', {}, 'Ключ-значение: адрес, телефон, часы работы и т.д.')]),
+      h('div', { class: 'page-header__text' }, [h('h1', {}, 'О бизнесе'), h('p', {}, 'Терминология для мульти-индустри интерфейса и произвольные данные (адрес, телефон и т.д.)')]),
     ])
   );
 
+  // ---- Терминология (industry_type, staff_label_*, service_label) ----
+  const labelInputs = {};
+  const termFields = LABEL_FIELDS.map(({ key, label, hint }) => {
+    const input = h('input', { id: `binfo-label-${key}`, type: 'text', class: 'input', value: DEFAULT_LABELS[key] ?? '' });
+    labelInputs[key] = input;
+    return h('div', { class: 'field' }, [
+      h('label', { class: 'field__label', for: `binfo-label-${key}` }, label),
+      input,
+      h('span', { class: 'field__hint' }, hint),
+    ]);
+  });
+  const termSubmitBtn = h('button', { type: 'submit', class: 'btn btn--primary' }, 'Сохранить терминологию');
+  const termForm = h('form', { class: 'form-grid form-grid--2col', novalidate: true }, [
+    ...termFields,
+    h('div', { class: 'form-actions', style: 'grid-column: 1 / -1' }, [termSubmitBtn]),
+  ]);
+  container.appendChild(
+    h('div', { class: 'card' }, [
+      h('h2', { class: 'section-title', style: 'margin-top:0' }, 'Терминология'),
+      h('p', { class: 'field__hint' }, 'Эти подписи используются в меню и формах вместо жёстко заданных "Мастера"/"Услуга".'),
+      termForm,
+    ])
+  );
+
+  function fillTerminologyForm(items) {
+    const map = new Map(items.map((item) => [item.key, item.value]));
+    LABEL_FIELDS.forEach(({ key }) => {
+      labelInputs[key].value = map.get(key) ?? DEFAULT_LABELS[key] ?? '';
+    });
+  }
+
+  termForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    termSubmitBtn.disabled = true;
+    try {
+      const toSave = LABEL_FIELDS.map(({ key }) => [key, labelInputs[key].value.trim()]).filter(([, value]) => value !== '');
+      await Promise.all(toSave.map(([key, value]) => api.upsertBusinessInfo(key, value)));
+      showToast('Терминология обновлена.', 'success');
+      await loadBusinessLabels();
+      await load();
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      termSubmitBtn.disabled = false;
+    }
+  });
+
+  // ---- Произвольные записи business-info (ключ-значение) ----
   const keyInput = h('input', { id: 'binfo-key', type: 'text', class: 'input', required: true, maxlength: '100' });
   const valueInput = h('input', { id: 'binfo-value', type: 'text', class: 'input', required: true });
   const submitBtn = h('button', { type: 'submit', class: 'btn btn--primary' }, 'Сохранить');
@@ -25,6 +85,7 @@ export async function renderBusinessInfo(container) {
     renderSkeletonCards(listEl, 3);
     try {
       const items = await api.listBusinessInfo();
+      fillTerminologyForm(items);
       renderList(items);
     } catch (err) {
       renderErrorState(listEl, { text: err.message, onRetry: load });
