@@ -1,14 +1,22 @@
 :root {
-  /* Brand tokens (из логотипа) — единственный источник правды для палитры.
-     Остальные --color-* ниже — это семантические алиасы поверх этих же
-     значений, чтобы не переписывать все ~100 мест использования в
-     components.css/layout.css/pages.css при следующей смене палитры. */
-  --primary-dark: #002b5b;
-  --accent-blue: #38b6ff;
+  /* Brand tokens (из логотипа "the dalfy bot") — единственный источник
+     правды для палитры. Остальные --color-* ниже — это семантические
+     алиасы поверх этих же значений, чтобы не переписывать все ~100 мест
+     использования в components.css/layout.css/pages.css при следующей
+     смене палитры. */
+  --primary-dark: #0a2540; /* глубокий тёмно-синий: заголовки, лого, активные пункты меню */
+  --brand-blue: #0052d4; /* "рабочий" solid-синий: фокус-кольцо, границы, чекбоксы/свитчи */
+  --accent-blue: #38b6ff; /* светлый конец градиентов, тень лого-плашки */
   --bg-main: #ffffff;
   --text-dark: #1f2937;
   --text-muted: #6b7280;
-  --border-color: #e5e7eb;
+  --border-color: #e2e8f0;
+
+  /* Фирменные градиенты */
+  --gradient-brand: linear-gradient(135deg, #0a2540 0%, #0052d4 50%, #38b6ff 100%);
+  --gradient-btn-primary: linear-gradient(135deg, #0052d4 0%, #38b6ff 100%);
+  --gradient-btn-hover: linear-gradient(135deg, #0040a8 0%, #28a0ed 100%);
+  --gradient-page-bg: linear-gradient(180deg, #f0f5fa 0%, #e6eef8 100%);
 
   /* Color: neutral scale */
   --color-bg: #f3f4f6;
@@ -23,15 +31,15 @@
   --color-text-on-primary: #ffffff;
 
   /* Color: brand (тёмно-синий/голубой из логотипа) */
-  --color-primary: var(--accent-blue);
-  --color-primary-hover: #1c9be6;
+  --color-primary: var(--brand-blue);
+  --color-primary-hover: #0040a8;
   /* primary-active выполняет двойную роль: :active-фон кнопки (тёмно-синий —
      нужный "утапливающий" эффект нажатия) И цвет текста на светло-голубых
      "soft" подложках (активный пункт меню, badge--primary, chip--active) —
      то самое "Ссылки, выделение активного пункта меню -> --primary-dark" из ТЗ. */
   --color-primary-active: var(--primary-dark);
-  --color-primary-soft: #e7f6ff;
-  --color-primary-soft-strong: #cfeeff;
+  --color-primary-soft: #e8f1ff;
+  --color-primary-soft-strong: #d3e6ff;
 
   /* Color: semantic */
   --color-success: #1a9c6b;
@@ -81,7 +89,10 @@
   --shadow-sm: 0 1px 2px rgba(31, 32, 54, 0.06);
   --shadow-md: 0 4px 16px rgba(31, 32, 54, 0.08);
   --shadow-lg: 0 12px 32px rgba(31, 32, 54, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(56, 182, 255, 0.35);
+  /* Многослойная "elevation"-тень для .card/.auth-card (глубокий мягкий
+     разлёт + тонкий контурный слой) — премиальный эффект вместо плоского shadow-sm. */
+  --shadow-card: 0 20px 40px -15px rgba(10, 37, 64, 0.08), 0 0 1px 1px rgba(10, 37, 64, 0.05);
+  --shadow-focus: 0 0 0 4px rgba(0, 82, 212, 0.15);
 
   /* Layout sizes */
   --sidebar-width: 248px;

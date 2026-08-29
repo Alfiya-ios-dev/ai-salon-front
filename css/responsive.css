@@ -65,10 +65,6 @@
     justify-content: flex-start;
   }
 
-  .auth-page {
-    background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-bg) 60%);
-  }
-
   /* Возвращаем настоящую построчную <table>-вёрстку — mobile-first база в
      components.css рендерит <table> как стопку карточек (см. комментарий
      там же), это уместно только на узких экранах с тач-вводом. */

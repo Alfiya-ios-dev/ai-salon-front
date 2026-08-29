@@ -18,7 +18,10 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--color-bg);
+  /* Мягкий градиентный фон приложения — отдельный токен от --color-bg,
+     т.к. --color-bg остаётся плоским серым для hover-поверхностей
+     (кнопки/пункты меню/чипы), а gradient нельзя переиспользовать там. */
+  background: var(--gradient-page-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--fs-base);

@@ -10,8 +10,11 @@
   top: 0;
   z-index: var(--z-header);
   height: var(--header-height);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  /* Полупрозрачное стекло — контент чуть просвечивает под шапкой при скролле. */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 
 .header__inner {
@@ -79,10 +82,11 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  /* Иконка/бренд-знак — по ТЗ primary-dark; accent-blue зарезервирован для
-     интерактивных элементов (кнопки/переключатели/чекбоксы). */
-  background: var(--color-primary-active);
+  /* Тот же градиент+тень, что и у auth-card__logo — единый бренд-знак
+     везде, где он появляется. */
+  background: var(--gradient-btn-primary);
   color: #fff;
+  box-shadow: 0 4px 10px rgba(56, 182, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,8 +197,10 @@
   bottom: 0;
   z-index: var(--z-header);
   height: var(--bottom-nav-height);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(226, 232, 240, 0.7);
   display: flex;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
