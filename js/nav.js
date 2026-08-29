@@ -57,3 +57,17 @@ export function pageTitleFor(path) {
   if (path.startsWith('#/staff/')) return 'Графики работы';
   return 'Salon Admin';
 }
+
+// Публичные разделы (доступны без логина) — шапка .public-header в main.js
+// строится из этого списка, а router.js/main.js по PUBLIC_ROUTE_PATHS решают,
+// показывать ли public-header/внутренний chrome для текущего пути.
+export const PUBLIC_NAV_ITEMS = [
+  { path: '#/about', label: 'О нас' },
+  { path: '#/news', label: 'Новости' },
+  { path: '#/reviews', label: 'Отзывы' },
+  { path: '#/guides', label: 'Инструкция' },
+  { path: '#/terms', label: 'Оферты' },
+  { path: '#/support', label: 'Техподдержка' },
+];
+
+export const PUBLIC_ROUTE_PATHS = ['#/auth', ...PUBLIC_NAV_ITEMS.map((item) => item.path)];

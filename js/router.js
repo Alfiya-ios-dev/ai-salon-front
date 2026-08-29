@@ -34,11 +34,24 @@ function currentPath() {
   return window.location.hash.replace(/^#/, '') || '/auth';
 }
 
+function findRoute(path) {
+  for (const route of routes) {
+    const match = path.match(route.regex);
+    if (match) return { route, match };
+  }
+  return null;
+}
+
 function resolve() {
   const path = currentPath();
   const authed = isAuthenticated();
+  const found = findRoute(path);
 
-  if (!authed && path !== '/auth') {
+  // Публичность решает route.isPublic, а не жёстко зашитый "/auth" — так
+  // /about, /news и другие публичные страницы тоже доступны без логина.
+  // Неизвестный путь (found === null) для неавторизованного считаем
+  // непубличным и уводим на /auth, как и раньше.
+  if (!authed && !(found && found.route.isPublic) && path !== '/auth') {
     window.location.hash = '#/auth';
     return;
   }
@@ -47,16 +60,15 @@ function resolve() {
     return;
   }
 
-  for (const route of routes) {
-    const match = path.match(route.regex);
-    if (!match) continue;
-    const params = {};
-    route.paramNames.forEach((name, i) => (params[name] = match[i + 1]));
-    outlet.innerHTML = '';
-    route.render(outlet, params);
-    if (onNavigate) onNavigate(path);
+  if (!found) {
+    outlet.innerHTML = '<p class="empty-state">Страница не найдена.</p>';
     return;
   }
 
-  outlet.innerHTML = '<p class="empty-state">Страница не найдена.</p>';
+  const { route, match } = found;
+  const params = {};
+  route.paramNames.forEach((name, i) => (params[name] = match[i + 1]));
+  outlet.innerHTML = '';
+  route.render(outlet, params);
+  if (onNavigate) onNavigate(path);
 }

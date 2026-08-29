@@ -3,7 +3,7 @@ import { isAuthenticated, getState, subscribe, loadBusinessLabels, resetSessionS
 import { logout } from './api.js';
 import { USE_MOCK_API } from './config.js';
 import { h } from './utils.js';
-import { getNavGroups, getBottomNavItems, pageTitleFor } from './nav.js';
+import { getNavGroups, getBottomNavItems, pageTitleFor, PUBLIC_NAV_ITEMS, PUBLIC_ROUTE_PATHS } from './nav.js';
 
 import { renderAuth } from './screens/auth.js';
 import { renderBookings } from './screens/bookings.js';
@@ -16,9 +16,16 @@ import { renderBusinessInfo } from './screens/businessInfo.js';
 import { renderDocuments } from './screens/documents.js';
 import { renderStopCategories } from './screens/stopCategories.js';
 import { renderManagers } from './screens/managers.js';
+import { renderAbout } from './screens/about.js';
+import { renderNews } from './screens/news.js';
+import { renderReviews } from './screens/reviews.js';
+import { renderGuides } from './screens/guides.js';
+import { renderTerms } from './screens/terms.js';
+import { renderSupport } from './screens/support.js';
 
 const sidebar = document.getElementById('sidebar');
 const header = document.getElementById('app-header');
+const publicHeader = document.getElementById('public-header');
 const outlet = document.getElementById('outlet');
 const bottomNav = document.getElementById('bottom-nav');
 const drawerOverlay = document.getElementById('drawer-overlay');
@@ -119,6 +126,33 @@ function renderHeader(currentPath) {
   );
 }
 
+function renderPublicHeader(currentPath) {
+  publicHeader.innerHTML = '';
+  publicHeader.appendChild(
+    h('div', { class: 'public-header__inner' }, [
+      h('a', { href: '#/auth', class: 'public-header__logo' }, [
+        h('span', { class: 'public-header__logo-mark', 'aria-hidden': 'true' }, '↗'),
+        'the dalfy bot',
+      ]),
+      h(
+        'nav',
+        { class: 'public-header__nav', 'aria-label': 'Публичные разделы' },
+        PUBLIC_NAV_ITEMS.map((item) =>
+          h(
+            'a',
+            {
+              href: item.path,
+              class: `public-header__link ${currentPath === item.path ? 'public-header__link--active' : ''}`,
+              'aria-current': currentPath === item.path ? 'page' : undefined,
+            },
+            item.label
+          )
+        )
+      ),
+    ])
+  );
+}
+
 function doLogout() {
   logout();
   resetSessionState();
@@ -131,6 +165,29 @@ function renderChrome() {
   const authed = isAuthenticated();
   const currentPath = window.location.hash.replace(/^#/, '') || '/auth';
   const hashPath = `#${currentPath}`;
+  const isPublicPage = PUBLIC_ROUTE_PATHS.includes(hashPath);
+
+  // .outlet--public снимает padding/max-width у #outlet и подкладывает
+  // фирменный градиент — публичные страницы должны быть full-bleed, без
+  // белых полей, в отличие от внутренних админ-экранов (см. layout.css).
+  outlet.classList.toggle('outlet--public', isPublicPage);
+
+  if (isPublicPage) {
+    header.classList.add('hidden');
+    bottomNav.classList.add('hidden');
+    sidebar.classList.add('hidden');
+    header.innerHTML = '';
+    bottomNav.innerHTML = '';
+    sidebar.innerHTML = '';
+    closeDrawer();
+
+    publicHeader.classList.remove('hidden');
+    renderPublicHeader(hashPath);
+    return;
+  }
+
+  publicHeader.classList.add('hidden');
+  publicHeader.innerHTML = '';
 
   header.classList.toggle('hidden', !authed);
   bottomNav.classList.toggle('hidden', !authed);
@@ -166,6 +223,10 @@ function refreshChromeLabels() {
   if (!isAuthenticated()) return;
   const currentPath = window.location.hash.replace(/^#/, '') || '/auth';
   const hashPath = `#${currentPath}`;
+  // На публичных страницах (в т.ч. когда авторизованный пользователь просто
+  // открыл /about) внутренний chrome скрыт и рендерится через renderChrome(),
+  // не через этот путь — перерисовывать его здесь незачем.
+  if (PUBLIC_ROUTE_PATHS.includes(hashPath)) return;
   renderSidebar(hashPath);
   renderBottomNav(hashPath);
   renderDrawer(hashPath);
@@ -192,6 +253,13 @@ registerRoute('/business-info', renderBusinessInfo);
 registerRoute('/documents', renderDocuments);
 registerRoute('/stop-categories', renderStopCategories);
 registerRoute('/managers', renderManagers);
+
+registerRoute('/about', renderAbout, { public: true });
+registerRoute('/news', renderNews, { public: true });
+registerRoute('/reviews', renderReviews, { public: true });
+registerRoute('/guides', renderGuides, { public: true });
+registerRoute('/terms', renderTerms, { public: true });
+registerRoute('/support', renderSupport, { public: true });
 
 initRouter(outlet, { onNavigate: renderChrome });
 window.addEventListener('auth:expired', renderChrome);
