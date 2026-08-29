@@ -40,7 +40,9 @@
 
 .btn--link {
   background: transparent;
-  color: var(--color-primary);
+  /* Текстовая ссылка ("Нет аккаунта? Зарегистрироваться" и т.п.), не заливка —
+     по ТЗ ссылки идут цветом --primary-dark, а не --accent-blue. */
+  color: var(--color-primary-active);
   padding: 0 var(--space-1);
   min-height: auto;
   height: var(--touch-target);
@@ -73,12 +75,12 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
 .card + .card {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .card--flush {
@@ -114,7 +116,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .field:last-child { margin-bottom: 0; }
@@ -233,7 +235,7 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .form-actions {
@@ -365,10 +367,15 @@
   font-weight: var(--fw-medium);
 }
 
-/* ==================== Tables (desktop) / Cards (mobile) ==================== */
+/* ==================== Tables: карточки на мобильном, table >=768px ====================
+   Mobile-first база: <table> рендерится как стопка карточек — каждый <tr>
+   это карточка, каждая <td> строка "подпись: значение" (подпись берётся из
+   data-label, который проставляет JS на каждой ячейке — см.
+   bookings.js/managers.js/businessInfo.js). Так ни одна колонка не
+   теряется на телефоне, в отличие от скрытия "менее важных" колонок.
+   Настоящая построчная <table>-вёрстка с <thead> возвращается на >=768px
+   в responsive.css. */
 .table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -376,8 +383,64 @@
 
 .table {
   width: 100%;
-  min-width: 640px;
   border-collapse: collapse;
+}
+
+.table thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.table,
+.table tbody,
+.table tr {
+  display: block;
+  width: 100%;
+}
+
+.table tr {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table tr:last-child {
+  border-bottom: none;
+}
+
+.table td {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border: 0;
+  font-size: var(--fs-base);
+  text-align: right;
+  min-height: 32px;
+  flex-wrap: wrap;
+}
+
+/* Ячейки без data-label (обычно колонка действий/кнопок, у которой нет
+   заголовка) — не растягиваем space-between на пустоте, а собираем
+   содержимое (кнопки) в один прижатый вправо ряд. */
+.table td:not([data-label]) {
+  justify-content: flex-end;
+}
+
+.table td::before {
+  content: attr(data-label);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: left;
+  flex-shrink: 0;
 }
 
 .table th {
@@ -387,38 +450,30 @@
   color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
-}
-
-.table td {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  font-size: var(--fs-base);
-  vertical-align: middle;
-}
-
-.table tr:last-child td {
-  border-bottom: none;
 }
 
 .table tr:hover td {
   background: var(--color-surface-alt);
 }
 
-/* Data list: renders as table on wide screens, cards on narrow (see responsive.css) */
+/* Экраны без "сырой" <table> (staff.js, documents.js, stopCategories.js)
+   рендерят списки сразу как .data-card — карточки. Экраны со <table>
+   (bookings.js, managers.js, businessInfo.js) выглядят так же на <768px
+   благодаря data-label CSS-технике выше (десктопный вид — в responsive.css). */
 .data-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .data-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);

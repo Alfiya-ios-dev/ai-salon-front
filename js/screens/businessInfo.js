@@ -99,10 +99,12 @@ export async function renderBusinessInfo(container) {
       return;
     }
     const tableWrap = h('div', { class: 'table-wrap' });
+    // data-label — подпись для мобильной карточной раскладки .table (см.
+    // components.css); должна совпадать с текстом соответствующего <th>.
     const rows = items.map((item) =>
       h('tr', {}, [
-        h('td', {}, h('code', {}, item.key)),
-        h('td', {}, item.value),
+        h('td', { 'data-label': 'Ключ' }, h('code', {}, item.key)),
+        h('td', { 'data-label': 'Значение' }, item.value),
         h('td', {}, [
           h('button', {
             class: 'btn btn--small btn--secondary',

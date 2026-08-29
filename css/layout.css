@@ -71,14 +71,17 @@
   padding: var(--space-5) var(--space-4);
   font-weight: var(--fw-bold);
   font-size: var(--fs-lg);
-  color: var(--color-primary);
+  /* Заголовок/бренд-текст — по ТЗ primary-dark, а не accent-blue. */
+  color: var(--color-primary-active);
 }
 
 .sidebar__logo-mark {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  background: var(--color-primary);
+  /* Иконка/бренд-знак — по ТЗ primary-dark; accent-blue зарезервирован для
+     интерактивных элементов (кнопки/переключатели/чекбоксы). */
+  background: var(--color-primary-active);
   color: #fff;
   display: flex;
   align-items: center;
@@ -215,7 +218,8 @@
 }
 
 .bottom-nav__item--active {
-  color: var(--color-primary);
+  /* Выделение активного пункта меню — по ТЗ primary-dark. */
+  color: var(--color-primary-active);
   font-weight: var(--fw-semibold);
 }
 

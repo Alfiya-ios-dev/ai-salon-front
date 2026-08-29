@@ -1,22 +1,37 @@
 :root {
-  /* Color: neutral scale */
-  --color-bg: #f6f6fb;
-  --color-surface: #ffffff;
-  --color-surface-alt: #fbfaff;
-  --color-border: #e4e3f0;
-  --color-border-strong: #d3d1e8;
+  /* Brand tokens (из логотипа) — единственный источник правды для палитры.
+     Остальные --color-* ниже — это семантические алиасы поверх этих же
+     значений, чтобы не переписывать все ~100 мест использования в
+     components.css/layout.css/pages.css при следующей смене палитры. */
+  --primary-dark: #002b5b;
+  --accent-blue: #38b6ff;
+  --bg-main: #ffffff;
+  --text-dark: #1f2937;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
 
-  --color-text: #1f2036;
-  --color-text-muted: #6b6b85;
-  --color-text-subtle: #9291ab;
+  /* Color: neutral scale */
+  --color-bg: #f3f4f6;
+  --color-surface: var(--bg-main);
+  --color-surface-alt: #f9fafb;
+  --color-border: var(--border-color);
+  --color-border-strong: #d1d5db;
+
+  --color-text: var(--text-dark);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: #9ca3af;
   --color-text-on-primary: #ffffff;
 
-  /* Color: brand (indigo/violet) */
-  --color-primary: #6c4cf1;
-  --color-primary-hover: #5b3ce0;
-  --color-primary-active: #4c2fc9;
-  --color-primary-soft: #efeaff;
-  --color-primary-soft-strong: #e0d6ff;
+  /* Color: brand (тёмно-синий/голубой из логотипа) */
+  --color-primary: var(--accent-blue);
+  --color-primary-hover: #1c9be6;
+  /* primary-active выполняет двойную роль: :active-фон кнопки (тёмно-синий —
+     нужный "утапливающий" эффект нажатия) И цвет текста на светло-голубых
+     "soft" подложках (активный пункт меню, badge--primary, chip--active) —
+     то самое "Ссылки, выделение активного пункта меню -> --primary-dark" из ТЗ. */
+  --color-primary-active: var(--primary-dark);
+  --color-primary-soft: #e7f6ff;
+  --color-primary-soft-strong: #cfeeff;
 
   /* Color: semantic */
   --color-success: #1a9c6b;
@@ -66,14 +81,17 @@
   --shadow-sm: 0 1px 2px rgba(31, 32, 54, 0.06);
   --shadow-md: 0 4px 16px rgba(31, 32, 54, 0.08);
   --shadow-lg: 0 12px 32px rgba(31, 32, 54, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(108, 76, 241, 0.35);
+  --shadow-focus: 0 0 0 3px rgba(56, 182, 255, 0.35);
 
   /* Layout sizes */
   --sidebar-width: 248px;
   --sidebar-width-collapsed: 76px;
   --header-height: 64px;
   --bottom-nav-height: 64px;
-  --touch-target: 44px;
+  /* 48px — минимальная высота тач-цели на мобильном (Mobile-First ТЗ);
+     каскадом применяется ко всем .btn/.input/.select/.textarea/.chip/
+     .switch/.nav-link/.bottom-nav__item/.dropdown__item через var(). */
+  --touch-target: 48px;
   --content-max-width: 1160px;
 
   /* Motion */

@@ -65,13 +65,16 @@ export async function renderManagers(container) {
       return;
     }
     const tableWrap = h('div', { class: 'table-wrap' });
+    // data-label — подпись для мобильной карточной раскладки .table (см.
+    // components.css); должна совпадать с текстом соответствующего <th>.
+    // Последняя колонка (действия) без подписи — у неё нет заголовка.
     const rows = managers.map((m) =>
       h('tr', {}, [
-        h('td', {}, m.full_name),
-        h('td', {}, m.email),
-        h('td', {}, h('span', { class: `badge badge--${ROLE_BADGE[m.role] || 'neutral'}` }, ROLE_LABEL[m.role] || m.role)),
-        h('td', {}, m.is_active ? h('span', { class: 'badge badge--success' }, 'активен') : h('span', { class: 'badge badge--neutral' }, 'отключён')),
-        h('td', {}, m.last_login_at ? formatDateTime(m.last_login_at) : '—'),
+        h('td', { 'data-label': 'Имя' }, m.full_name),
+        h('td', { 'data-label': 'Email' }, m.email),
+        h('td', { 'data-label': 'Роль' }, h('span', { class: `badge badge--${ROLE_BADGE[m.role] || 'neutral'}` }, ROLE_LABEL[m.role] || m.role)),
+        h('td', { 'data-label': 'Статус' }, m.is_active ? h('span', { class: 'badge badge--success' }, 'активен') : h('span', { class: 'badge badge--neutral' }, 'отключён')),
+        h('td', { 'data-label': 'Последний вход' }, m.last_login_at ? formatDateTime(m.last_login_at) : '—'),
         h('td', {}, [
           h('button', {
             class: 'btn btn--small btn--secondary',

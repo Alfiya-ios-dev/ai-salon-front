@@ -68,6 +68,51 @@
   .auth-page {
     background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-bg) 60%);
   }
+
+  /* Возвращаем настоящую построчную <table>-вёрстку — mobile-first база в
+     components.css рендерит <table> как стопку карточек (см. комментарий
+     там же), это уместно только на узких экранах с тач-вводом. */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    display: table;
+    min-width: 640px;
+  }
+
+  .table thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    display: table-header-group;
+  }
+
+  .table tbody {
+    display: table-row-group;
+  }
+
+  .table tr {
+    display: table-row;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .table td {
+    display: table-cell;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    min-height: 0;
+  }
+
+  .table td::before {
+    content: none;
+  }
 }
 
 /* ---------- 1024px: desktop ---------- */

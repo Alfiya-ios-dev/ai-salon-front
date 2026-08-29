@@ -97,12 +97,15 @@ export async function renderBookings(container) {
       const staffName = staffMap.get(staffId) ?? `#${staffId}`;
       const serviceName = serviceMap.get(booking.service_id) ?? `#${booking.service_id}`;
 
+      // data-label — подпись, которую CSS показывает через ::before, когда
+      // .table на мобильном (<768px) переверстывается в карточки (см.
+      // components.css). Должна совпадать с текстом соответствующего <th>.
       return h('tr', {}, [
-        h('td', {}, h('span', { class: 'booking-client' }, booking.client_name)),
-        h('td', {}, booking.client_phone),
-        h('td', {}, h('span', { class: 'booking-datetime' }, formatDateTime(booking.booking_datetime))),
-        h('td', {}, `${staffName} / ${serviceName}`),
-        h('td', {}, [badge, statusSelect]),
+        h('td', { 'data-label': 'Клиент' }, h('span', { class: 'booking-client' }, booking.client_name)),
+        h('td', { 'data-label': 'Телефон' }, booking.client_phone),
+        h('td', { 'data-label': 'Дата и время' }, h('span', { class: 'booking-datetime' }, formatDateTime(booking.booking_datetime))),
+        h('td', { 'data-label': 'Мастер / услуга' }, `${staffName} / ${serviceName}`),
+        h('td', { 'data-label': 'Статус' }, [badge, statusSelect]),
       ]);
     });
 
