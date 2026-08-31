@@ -58,16 +58,18 @@ export function pageTitleFor(path) {
   return 'Salon Admin';
 }
 
-// Публичные разделы (доступны без логина) — шапка .public-header в main.js
-// строится из этого списка, а router.js/main.js по PUBLIC_ROUTE_PATHS решают,
-// показывать ли public-header/внутренний chrome для текущего пути.
+// Пункты меню .public-header (main.js) — по ТЗ ровно эти 4, без "Отзывы" и
+// "Техподдержка". Те две страницы всё ещё существуют и остаются доступны по
+// прямой ссылке (см. PUBLIC_ROUTE_PATHS ниже) — просто не показаны в шапке.
 export const PUBLIC_NAV_ITEMS = [
   { path: '#/about', label: 'О нас' },
   { path: '#/news', label: 'Новости' },
-  { path: '#/reviews', label: 'Отзывы' },
   { path: '#/guides', label: 'Инструкция' },
   { path: '#/terms', label: 'Оферты' },
-  { path: '#/support', label: 'Техподдержка' },
 ];
 
-export const PUBLIC_ROUTE_PATHS = ['#/auth', ...PUBLIC_NAV_ITEMS.map((item) => item.path)];
+// Все публичные (доступные без логина) пути — независимый от PUBLIC_NAV_ITEMS
+// список, используется router.js/main.js для решения "не редиректить на
+// /auth" / "показать public-header". Нарочно не выводится из PUBLIC_NAV_ITEMS,
+// иначе урезание меню молча закрыло бы /reviews и /support для гостей.
+export const PUBLIC_ROUTE_PATHS = ['#/auth', '#/about', '#/news', '#/reviews', '#/guides', '#/terms', '#/support'];

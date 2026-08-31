@@ -128,27 +128,55 @@ function renderHeader(currentPath) {
 
 function renderPublicHeader(currentPath) {
   publicHeader.innerHTML = '';
+
+  // navEl/menuBtn ссылаются друг на друга через замыкания в onClick — это
+  // безопасно: колбэки читают переменные только в момент клика, к которому
+  // обе const уже точно проинициализированы (синхронная сборка ниже).
+  const navEl = h(
+    'nav',
+    { class: 'public-header__nav', 'aria-label': 'Публичные разделы' },
+    PUBLIC_NAV_ITEMS.map((item) =>
+      h(
+        'a',
+        {
+          href: item.path,
+          class: `public-header__link ${currentPath === item.path ? 'public-header__link--active' : ''}`,
+          'aria-current': currentPath === item.path ? 'page' : undefined,
+          // На мобильном клик по пункту меню должен закрывать плавающую
+          // панель — иначе она останется открытой поверх новой страницы.
+          onClick: () => {
+            navEl.classList.remove('public-header__nav--open');
+            menuBtn.setAttribute('aria-expanded', 'false');
+          },
+        },
+        item.label
+      )
+    )
+  );
+
+  const menuBtn = h(
+    'button',
+    {
+      type: 'button',
+      class: 'public-header__menu-btn',
+      'aria-label': 'Открыть меню',
+      'aria-expanded': 'false',
+      onClick: () => {
+        const open = navEl.classList.toggle('public-header__nav--open');
+        menuBtn.setAttribute('aria-expanded', String(open));
+      },
+    },
+    '☰'
+  );
+
   publicHeader.appendChild(
     h('div', { class: 'public-header__inner' }, [
       h('a', { href: '#/auth', class: 'public-header__logo' }, [
         h('span', { class: 'public-header__logo-mark', 'aria-hidden': 'true' }, '↗'),
         'the dalfy bot',
       ]),
-      h(
-        'nav',
-        { class: 'public-header__nav', 'aria-label': 'Публичные разделы' },
-        PUBLIC_NAV_ITEMS.map((item) =>
-          h(
-            'a',
-            {
-              href: item.path,
-              class: `public-header__link ${currentPath === item.path ? 'public-header__link--active' : ''}`,
-              'aria-current': currentPath === item.path ? 'page' : undefined,
-            },
-            item.label
-          )
-        )
-      ),
+      menuBtn,
+      navEl,
     ])
   );
 }

@@ -63,9 +63,9 @@
 }
 
 /* ---------- Public header (auth + about/news/reviews/guides/terms/support) ----------
-   Отдельный от .header компонент: у публичных страниц нет сайдбара/бургера,
-   только лого + горизонтальное меню. Показывается вместо .header, когда
-   текущий путь входит в PUBLIC_ROUTE_PATHS (js/nav.js), см. main.js. */
+   Отдельный от .header компонент: у публичных страниц нет сайдбара, только
+   лого + меню (на мобильном — за гамбургером). Показывается вместо .header,
+   когда текущий путь входит в PUBLIC_ROUTE_PATHS (js/nav.js), см. main.js. */
 .public-header {
   position: sticky;
   top: 0;
@@ -108,31 +108,53 @@
   flex-shrink: 0;
 }
 
-/* Mobile-first: горизонтальный скроллируемый ряд чипсов (см. ТЗ п.1).
-   Плоское десктопное меню — override в responsive.css на >=768px. */
-.public-header__nav {
-  display: flex;
+/* Гамбургер — виден только на мобильном (скрывается >=768px в responsive.css). */
+.public-header__menu-btn {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  min-width: 0;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  color: var(--primary-dark);
+  flex-shrink: 0;
 }
 
-.public-header__nav::-webkit-scrollbar {
+.public-header__menu-btn:hover {
+  background: var(--color-bg);
+}
+
+/* Mobile-first: меню скрыто по умолчанию и всплывает плавающей панелью под
+   шапкой при клике на гамбургер (.public-header__nav--open, main.js).
+   Плоское инлайн-меню без панели — override в responsive.css на >=768px. */
+.public-header__nav {
   display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2) var(--space-4) var(--space-4);
+}
+
+.public-header__nav--open {
+  display: flex;
 }
 
 .public-header__link {
-  flex-shrink: 0;
-  font-size: var(--fs-sm);
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
   font-weight: var(--fw-medium);
   color: var(--text-muted);
-  white-space: nowrap;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-bg);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 

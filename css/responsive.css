@@ -36,17 +36,30 @@
     display: none;
   }
 
-  /* Публичная шапка на десктопе — просторный padding и плоское меню без
-     "чипсовых" подложек (мобильный вид задан по умолчанию в layout.css). */
+  /* Публичная шапка на десктопе — гамбургер и плавающая панель (mobile-first
+     база в layout.css) больше не нужны, меню всегда видно плоским рядом. */
   .public-header__inner {
     padding: 0 var(--space-8);
   }
 
+  .public-header__menu-btn {
+    display: none;
+  }
+
   .public-header__nav {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    align-items: center;
     gap: var(--space-6);
+    background: transparent;
+    border-bottom: none;
+    box-shadow: none;
+    padding: 0;
   }
 
   .public-header__link {
+    min-height: auto;
     padding: var(--space-2) 0;
     background: transparent;
     border-radius: 0;

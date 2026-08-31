@@ -40,9 +40,38 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-radius: var(--radius-xl);
+  border-radius: 24px;
   box-shadow: var(--shadow-card);
   padding: var(--space-8) var(--space-6);
+}
+
+/* Точная подгонка под референс только внутри карточки входа — глобальные
+   .input/.select/.textarea/.btn (radius-md=10px) намеренно не трогаем,
+   чтобы не менять внешний вид форм во всём остальном приложении. */
+.auth-card .input,
+.auth-card .select,
+.auth-card .textarea {
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+/* Поле пароля дополнительно живёт внутри .input-group, у которого справа
+   зарезервировано место под кнопку-глаз (components.css:.input-group .input).
+   Без этого override shorthand padding выше перетёр бы правый отступ, и
+   глаз наехал бы на текст пароля. */
+.auth-card .input-group .input {
+  padding-right: calc(var(--touch-target) + var(--space-1));
+}
+
+.auth-card .btn {
+  border-radius: 12px;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    max-width: 90vw;
+    margin: var(--space-4) auto;
+  }
 }
 
 .auth-card__logo {
@@ -63,12 +92,13 @@
 .auth-card__title {
   font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
+  color: var(--primary-dark);
   text-align: center;
   margin-bottom: var(--space-1);
 }
 
 .auth-card__subtitle {
-  font-size: var(--fs-sm);
+  font-size: 14px;
   color: var(--color-text-muted);
   text-align: center;
   margin-bottom: var(--space-6);
