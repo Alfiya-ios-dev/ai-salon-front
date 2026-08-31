@@ -2,10 +2,12 @@ import * as api from '../api.js';
 import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState } from '../utils.js';
 import { DEFAULT_LABELS, loadBusinessLabels } from '../state.js';
 
-// Ключи меток терминологии — та же key/value модель business-info, что и
-// произвольные address/phone/working_hours (см. js/mock-api.js:104), поэтому
-// сохраняем их через тот же api.upsertBusinessInfo(key, value) по одному
-// PUT-запросу на ключ, а не отдельным batch-эндпоинтом.
+// Метки читаются как обычные business-info key/value записи (та же модель,
+// что address/phone/working_hours — см. js/mock-api.js:104), но сохраняются
+// одним атомарным PUT /api/v1/business-info (api.updateTenantSettings) —
+// выделенный bulk-эндпоинт под именно эти 4 поля, см. TenantSettingsUpdate
+// в openapi.json. Так все 4 метки уходят/применяются одним запросом, а не
+// 4 отдельными PUT /business-info/{key}.
 const LABEL_FIELDS = [
   { key: 'industry_type', label: 'Тип индустрии', hint: 'Например: beauty, auto_service, medical' },
   { key: 'staff_label_singular', label: 'Сотрудник (ед. число)', hint: 'Например: Мастер, Автомеханик, Врач' },
@@ -55,8 +57,10 @@ export async function renderBusinessInfo(container) {
     e.preventDefault();
     termSubmitBtn.disabled = true;
     try {
-      const toSave = LABEL_FIELDS.map(({ key }) => [key, labelInputs[key].value.trim()]).filter(([, value]) => value !== '');
-      await Promise.all(toSave.map(([key, value]) => api.upsertBusinessInfo(key, value)));
+      const payload = Object.fromEntries(
+        LABEL_FIELDS.map(({ key }) => [key, labelInputs[key].value.trim()]).filter(([, value]) => value !== '')
+      );
+      await api.updateTenantSettings(payload);
       showToast('Терминология обновлена.', 'success');
       await loadBusinessLabels();
       await load();

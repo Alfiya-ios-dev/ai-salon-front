@@ -27,13 +27,26 @@ function buildQuery(params) {
   return qs ? `?${qs}` : '';
 }
 
+// Известные системные строки backend (сверены вживую против
+// http://5.42.126.134:8000, не угаданы) — переводим на русский, чтобы
+// пользователь не видел английский текст поверх русского интерфейса. Если
+// строки нет в словаре, показываем detail как есть (лучше английский текст,
+// чем пустое сообщение).
+const ERROR_TRANSLATIONS = {
+  'Invalid email or password': 'Неверный email или пароль.',
+  'Email already registered': 'Пользователь с таким email уже зарегистрирован.',
+  'User already exists': 'Пользователь с таким email уже зарегистрирован.',
+  'Not authenticated': 'Необходимо авторизоваться.',
+  'Invalid or expired token': 'Сессия истекла. Авторизуйтесь заново.',
+};
+
 // FastAPI отдаёт ошибки в двух формах:
 //  - {"detail": "строка"}                          — обычный HTTPException (401/403/404/...)
 //  - {"detail": [{"loc":[...], "msg":"...", ...}]}  — 422 Validation Error, detail это МАССИВ
 // (см. схемы HTTPValidationError/ValidationError в openapi.json). Обе формы
 // нужно разбирать явно, иначе 422 покажет пользователю "[object Object]".
 function parseErrorMessage(status, data) {
-  if (typeof data?.detail === 'string') return data.detail;
+  if (typeof data?.detail === 'string') return ERROR_TRANSLATIONS[data.detail] || data.detail;
   if (Array.isArray(data?.detail)) {
     const parts = data.detail.map((item) => {
       const field = Array.isArray(item.loc) ? item.loc.filter((p) => p !== 'body').join('.') : '';
@@ -101,7 +114,13 @@ export async function apiRequest(path, options = {}) {
   if (!response.ok) {
     const message = parseErrorMessage(response.status, data);
 
-    if (response.status === 401) {
+    // handleUnauthorized() чистит сессию и уводит на /auth — это уместно
+    // только когда протух РЕАЛЬНЫЙ токен на защищённом запросе. На login/
+    // register (auth:false, токена ещё нет) 401 значит "неверный email/
+    // пароль", а не "сессия истекла" — раньше это тоже дёргало
+    // handleUnauthorized(), что не ломало UI (outlet не трогается), но было
+    // семантически неверным и рискованным при будущих изменениях.
+    if (response.status === 401 && auth) {
       handleUnauthorized();
     }
 
@@ -208,6 +227,14 @@ function realDeleteBusinessInfo(key) {
   return apiRequest(`/api/v1/business-info/${encodeURIComponent(key)}`, { method: 'DELETE' });
 }
 
+// Bulk-обновление 4 меток терминологии (industry_type/staff_label_*/
+// service_label) одним атомарным PUT /api/v1/business-info — отдельный
+// эндпоинт от per-key PUT /business-info/{key} выше (тот тоже работает для
+// этих ключей, проверено вживую, но это лишние 4 запроса вместо одного).
+function realUpdateTenantSettings(payload) {
+  return apiRequest('/api/v1/business-info', { method: 'PUT', body: payload });
+}
+
 function realListDocuments() {
   return apiRequest('/api/v1/documents');
 }
@@ -311,6 +338,7 @@ export const createBusinessInfo = pick(realCreateBusinessInfo, mock.createBusine
 export const getBusinessInfo = pick(realGetBusinessInfo, mock.getBusinessInfo);
 export const upsertBusinessInfo = pick(realUpsertBusinessInfo, mock.upsertBusinessInfo);
 export const deleteBusinessInfo = pick(realDeleteBusinessInfo, mock.deleteBusinessInfo);
+export const updateTenantSettings = pick(realUpdateTenantSettings, mock.updateTenantSettings);
 
 // ---- Документы (RAG-файлы) ----
 export const listDocuments = pick(realListDocuments, mock.listDocuments);

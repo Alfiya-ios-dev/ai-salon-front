@@ -420,6 +420,21 @@ export async function upsertBusinessInfo(key, value) {
   return item;
 }
 
+// Мок-эквивалент реального bulk PUT /api/v1/business-info (TenantSettingsUpdate):
+// в mock-хранилище нет отдельной модели под 4 метки терминологии, поэтому
+// просто апсертим те же ключи через уже существующий key/value стор.
+export async function updateTenantSettings(payload) {
+  await delay();
+  const entries = Object.entries(payload).filter(([, value]) => value !== undefined && value !== null);
+  for (const [key, value] of entries) {
+    const item = db.businessInfo.find((i) => i.key === key);
+    if (item) item.value = value;
+    else db.businessInfo.push({ key, value });
+  }
+  save();
+  return Object.fromEntries(db.businessInfo.filter((i) => i.key in payload).map((i) => [i.key, i.value]));
+}
+
 export async function deleteBusinessInfo(key) {
   await delay();
   const idx = db.businessInfo.findIndex((i) => i.key === key);
