@@ -7,12 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/reset.css" />
-  <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/pages.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
+  <!-- ?v=N — cache-busting: локальные dev-серверы (Live Server, http.server
+       и т.п.) часто отдают статику с агрессивным browser-кэшем, из-за чего
+       правки в CSS/JS не подхватываются без хард-рефреша. Бампайте N при
+       релизе, если нужно гарантированно сбросить кэш у уже открытых вкладок. -->
+  <link rel="stylesheet" href="css/variables.css?v=1" />
+  <link rel="stylesheet" href="css/reset.css?v=1" />
+  <link rel="stylesheet" href="css/layout.css?v=1" />
+  <link rel="stylesheet" href="css/components.css?v=1" />
+  <link rel="stylesheet" href="css/pages.css?v=1" />
+  <link rel="stylesheet" href="css/responsive.css?v=1" />
 </head>
 <body>
   <div id="app" class="app">
@@ -32,6 +36,6 @@
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <div id="modal-root"></div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=1"></script>
 </body>
 </html>
