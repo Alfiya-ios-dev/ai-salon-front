@@ -2,6 +2,16 @@ import * as api from '../api.js';
 import { h, showToast, confirmModal, renderSkeletonCards, renderEmptyState, renderErrorState } from '../utils.js';
 import { DEFAULT_LABELS, loadBusinessLabels } from '../state.js';
 
+// Русское склонение "диалог/диалога/диалогов" по числу (стандартное правило:
+// ...1 (кроме ...11) -> диалог, ...2-4 (кроме ...12-14) -> диалога, иначе диалогов).
+function pluralDialogs(n) {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod10 === 1 && mod100 !== 11) return 'диалог';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'диалога';
+  return 'диалогов';
+}
+
 // Метки читаются как обычные business-info key/value записи (та же модель,
 // что address/phone/working_hours — см. js/mock-api.js:104), но сохраняются
 // одним атомарным PUT /api/v1/business-info (api.updateTenantSettings) —
@@ -21,6 +31,66 @@ export async function renderBusinessInfo(container) {
       h('div', { class: 'page-header__text' }, [h('h1', {}, 'О бизнесе'), h('p', {}, 'Терминология для мульти-индустри интерфейса и произвольные данные (адрес, телефон и т.д.)')]),
     ])
   );
+
+  // ---- Пилотный период (лимит уникальных диалогов) ----
+  // Контракт GET /api/v1/tenant/pilot-status подтверждён бэкенд-командой:
+  // {used_dialogs_count, max_dialogs_limit, is_pilot_active} — см. api.js.
+  const pilotEl = h('div', {});
+  container.appendChild(pilotEl);
+
+  function renderPilotStatus(status) {
+    pilotEl.innerHTML = '';
+    const { used_dialogs_count, max_dialogs_limit, is_pilot_active } = status;
+    const limitReached = used_dialogs_count >= max_dialogs_limit;
+    const nearLimit = !limitReached && used_dialogs_count >= max_dialogs_limit - 5;
+    const percent = max_dialogs_limit > 0 ? Math.min(100, Math.round((used_dialogs_count / max_dialogs_limit) * 100)) : 0;
+    const remaining = Math.max(0, max_dialogs_limit - used_dialogs_count);
+
+    let fillClass = 'progress-bar__fill';
+    if (limitReached) fillClass += ' progress-bar__fill--danger';
+    else if (nearLimit) fillClass += ' progress-bar__fill--warning';
+
+    let badgeVariant = 'success';
+    let badgeText = 'Пилот активен';
+    if (!is_pilot_active) {
+      badgeText = 'Пилот завершён';
+    } else if (limitReached) {
+      badgeVariant = 'danger';
+      badgeText = 'Лимит исчерпан';
+    } else if (nearLimit) {
+      badgeVariant = 'warning';
+      badgeText = 'Осталось мало диалогов';
+    }
+
+    let hint = 'Пилотный период неограничен для этого аккаунта.';
+    if (is_pilot_active) {
+      hint = limitReached
+        ? 'Лимит уникальных диалогов пилота исчерпан — новые клиенты переводятся на оператора вместо ИИ.'
+        : `Осталось ${remaining} ${pluralDialogs(remaining)} до конца пилотного периода.`;
+    }
+
+    pilotEl.appendChild(
+      h('div', { class: 'card' }, [
+        h('div', { class: 'page-header', style: 'margin-bottom: var(--space-3)' }, [
+          h('div', { class: 'page-header__text' }, [h('h2', { class: 'section-title', style: 'margin:0' }, 'Пилотный период')]),
+          h('span', { class: `badge badge--${badgeVariant}` }, badgeText),
+        ]),
+        h('div', { class: 'stat-card__value', style: 'margin-bottom: var(--space-2)' }, `${used_dialogs_count} / ${max_dialogs_limit} диалогов`),
+        h('div', { class: 'progress-bar' }, [h('div', { class: fillClass, style: `width: ${percent}%` })]),
+        h('p', { class: 'field__hint', style: 'margin-top: var(--space-2)' }, hint),
+      ])
+    );
+  }
+
+  async function loadPilotStatus() {
+    renderSkeletonCards(pilotEl, 1);
+    try {
+      const status = await api.getPilotStatus();
+      renderPilotStatus(status);
+    } catch (err) {
+      renderErrorState(pilotEl, { text: err.message, onRetry: loadPilotStatus });
+    }
+  }
 
   // ---- Терминология (industry_type, staff_label_*, service_label) ----
   const labelInputs = {};
@@ -155,5 +225,5 @@ export async function renderBusinessInfo(container) {
     }
   });
 
-  await load();
+  await Promise.all([loadPilotStatus(), load()]);
 }

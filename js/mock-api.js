@@ -101,6 +101,11 @@ function seedDb() {
       objection_handling: 'Если клиент говорит "дорого" — расскажи о составе услуги и качестве материалов, предложи более доступную услугу из той же категории.',
       updated_at: isoDaysFromNow(-4),
     },
+    pilotStatus: {
+      used_dialogs_count: 27,
+      max_dialogs_limit: 40,
+      is_pilot_active: true,
+    },
     businessInfo: [
       { key: 'address', value: 'г. Бишкек, ул. Чуй 123, 2 этаж' },
       { key: 'phone', value: '+996 700 000 000' },
@@ -433,6 +438,17 @@ export async function updateTenantSettings(payload) {
   }
   save();
   return Object.fromEntries(db.businessInfo.filter((i) => i.key in payload).map((i) => [i.key, i.value]));
+}
+
+// Прогресс пилотного периода — зеркалит контракт реального
+// GET /api/v1/tenant/pilot-status: {used_dialogs_count, max_dialogs_limit, is_pilot_active}.
+export async function getPilotStatus() {
+  await delay();
+  return {
+    used_dialogs_count: db.pilotStatus.used_dialogs_count,
+    max_dialogs_limit: db.pilotStatus.max_dialogs_limit,
+    is_pilot_active: db.pilotStatus.is_pilot_active,
+  };
 }
 
 export async function deleteBusinessInfo(key) {

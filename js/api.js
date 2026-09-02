@@ -235,6 +235,13 @@ function realUpdateTenantSettings(payload) {
   return apiRequest('/api/v1/business-info', { method: 'PUT', body: payload });
 }
 
+// Прогресс пилотного периода (лимит уникальных диалогов) для дашборда —
+// контракт подтверждён бэкенд-командой: {used_dialogs_count, max_dialogs_limit,
+// is_pilot_active}, тот же Bearer JWT, что и остальные /api/v1/* эндпоинты.
+function realGetPilotStatus() {
+  return apiRequest('/api/v1/tenant/pilot-status');
+}
+
 function realListDocuments() {
   return apiRequest('/api/v1/documents');
 }
@@ -339,6 +346,9 @@ export const getBusinessInfo = pick(realGetBusinessInfo, mock.getBusinessInfo);
 export const upsertBusinessInfo = pick(realUpsertBusinessInfo, mock.upsertBusinessInfo);
 export const deleteBusinessInfo = pick(realDeleteBusinessInfo, mock.deleteBusinessInfo);
 export const updateTenantSettings = pick(realUpdateTenantSettings, mock.updateTenantSettings);
+
+// ---- Pilot dialogs limit (дашборд) ----
+export const getPilotStatus = pick(realGetPilotStatus, mock.getPilotStatus);
 
 // ---- Документы (RAG-файлы) ----
 export const listDocuments = pick(realListDocuments, mock.listDocuments);
