@@ -55,7 +55,7 @@ export function pageTitleFor(path) {
   const exact = allItems.find((i) => i.path === path);
   if (exact) return exact.label;
   if (path.startsWith('#/staff/')) return 'Графики работы';
-  return 'Salon Admin';
+  return 'dalfy';
 }
 
 // Пункты меню .public-header (main.js) — по ТЗ ровно эти 4, без "Отзывы" и

@@ -236,13 +236,13 @@ export function renderAuth(container) {
     });
 
     const card = h('div', { class: 'auth-card' }, [
-      h('div', { class: 'auth-card__logo', 'aria-hidden': 'true' }, 'S'),
+      h('div', { class: 'auth-card__logo', 'aria-hidden': 'true' }, 'D'),
       h('h1', { class: 'auth-card__title' }, mode === 'login' ? 'Вход в кабинет' : 'Регистрация бизнеса'),
-      h('p', { class: 'auth-card__subtitle' }, 'Панель управления бьюти-салоном'),
+      h('p', { class: 'auth-card__subtitle' }, 'Панель управления бизнесом'),
       USE_MOCK_API
         ? h('div', { class: 'mock-banner' }, [
             h('span', { 'aria-hidden': 'true' }, '🧪'),
-            h('span', {}, 'Backend недоступен — работает mock-режим. Демо-вход: demo@salon.test / demo12345'),
+            h('span', {}, 'Backend недоступен — работает mock-режим. Демо-вход: demo@dalfy.test / demo12345'),
           ])
         : null,
       form,

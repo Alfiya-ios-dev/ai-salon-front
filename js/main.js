@@ -58,7 +58,7 @@ function buildNavLink(item, currentPath, onClick) {
 function renderSidebar(currentPath) {
   sidebar.innerHTML = '';
   sidebar.appendChild(
-    h('div', { class: 'sidebar__logo' }, [h('span', { class: 'sidebar__logo-mark' }, 'S'), 'Salon Admin'])
+    h('div', { class: 'sidebar__logo' }, [h('span', { class: 'sidebar__logo-mark' }, 'D'), 'dalfy'])
   );
   getNavGroups().forEach((group) => {
     sidebar.appendChild(h('div', { class: 'sidebar__group-label' }, group.label));
@@ -95,7 +95,7 @@ function renderDrawer(currentPath) {
   mobileDrawer.innerHTML = '';
   mobileDrawer.appendChild(
     h('div', { class: 'mobile-drawer__header' }, [
-      h('span', { class: 'sidebar__logo' }, [h('span', { class: 'sidebar__logo-mark' }, 'S'), 'Salon Admin']),
+      h('span', { class: 'sidebar__logo' }, [h('span', { class: 'sidebar__logo-mark' }, 'D'), 'dalfy']),
       h('button', { class: 'btn btn--icon', onClick: closeDrawer, 'aria-label': 'Закрыть меню' }, '✕'),
     ])
   );
@@ -173,7 +173,7 @@ function renderPublicHeader(currentPath) {
     h('div', { class: 'public-header__inner' }, [
       h('a', { href: '#/auth', class: 'public-header__logo' }, [
         h('span', { class: 'public-header__logo-mark', 'aria-hidden': 'true' }, '↗'),
-        'the dalfy bot',
+        'dalfy',
       ]),
       menuBtn,
       navEl,
@@ -295,5 +295,5 @@ renderChrome();
 
 if (USE_MOCK_API) {
   // eslint-disable-next-line no-console
-  console.info('[salon-admin] Mock-режим включён (USE_MOCK_API=true в js/config.js). Демо-доступ: demo@salon.test / demo12345');
+  console.info('[dalfy] Mock-режим включён (USE_MOCK_API=true в js/config.js). Демо-доступ: demo@dalfy.test / demo12345');
 }

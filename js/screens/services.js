@@ -5,7 +5,7 @@ import { getState, setState } from '../state.js';
 export async function renderServices(container) {
   container.appendChild(
     h('div', { class: 'page-header' }, [
-      h('div', { class: 'page-header__text' }, [h('h1', {}, 'Услуги'), h('p', {}, 'Каталог услуг салона и цены')]),
+      h('div', { class: 'page-header__text' }, [h('h1', {}, 'Услуги'), h('p', {}, 'Каталог услуг и цены')]),
     ])
   );
 

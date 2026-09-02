@@ -54,10 +54,10 @@ function seedDb() {
   return {
     users: [
       {
-        email: 'demo@salon.test',
+        email: 'demo@dalfy.test',
         password: 'demo12345',
         tenant_id: 1,
-        business_name: 'Salon Demo (Mock)',
+        business_name: 'Dalfy Demo (Mock)',
         business_phone_number: '+996 700 000 000',
       },
     ],
@@ -96,7 +96,7 @@ function seedDb() {
     ],
     prompts: {
       id: 1,
-      system_prompt: 'Ты — вежливый администратор бьюти-салона в WhatsApp. Помогай клиентам выбрать услугу, мастера и время визита. Отвечай кратко и дружелюбно, на русском языке.',
+      system_prompt: 'Ты — вежливый ассистент компании в WhatsApp. Помогай клиентам выбрать услугу, специалиста и время визита. Отвечай кратко и дружелюбно, на русском языке.',
       upsell_scripts: 'Если клиент записывается на стрижку — предложи окрашивание или укладку со скидкой 10%. Если на маникюр — предложи добавить педикюр.',
       objection_handling: 'Если клиент говорит "дорого" — расскажи о составе услуги и качестве материалов, предложи более доступную услугу из той же категории.',
       updated_at: isoDaysFromNow(-4),
@@ -105,7 +105,7 @@ function seedDb() {
       { key: 'address', value: 'г. Бишкек, ул. Чуй 123, 2 этаж' },
       { key: 'phone', value: '+996 700 000 000' },
       { key: 'working_hours', value: 'Пн-Сб 09:00–20:00, Вс — выходной' },
-      { key: 'instagram', value: '@salon_demo_kg' },
+      { key: 'instagram', value: '@dalfy_demo' },
     ],
     documents: [
       { id: 1, title: 'Прайс-лист 2026', category: 'Прайс-лист', file_name: 'price-list-2026.pdf', file_size_kb: 245, uploaded_at: isoDaysFromNow(-10), status: 'active', description: 'Актуальные цены на все услуги.' },
@@ -114,14 +114,14 @@ function seedDb() {
     ],
     stopCategories: [
       { id: 1, name: 'Медицинские консультации', description: 'Бот не должен давать медицинские советы или диагнозы.', is_active: true, created_at: isoDaysFromNow(-40) },
-      { id: 2, name: 'Обсуждение конкурентов', description: 'Не сравнивать цены и качество с другими салонами.', is_active: true, created_at: isoDaysFromNow(-40) },
+      { id: 2, name: 'Обсуждение конкурентов', description: 'Не сравнивать цены и качество с конкурентами.', is_active: true, created_at: isoDaysFromNow(-40) },
       { id: 3, name: 'Скидки свыше 30%', description: 'Бот не может обещать скидку больше согласованного лимита.', is_active: true, created_at: isoDaysFromNow(-20) },
       { id: 4, name: 'Персональные данные третьих лиц', description: 'Запрет на обсуждение данных других клиентов.', is_active: false, created_at: isoDaysFromNow(-15) },
     ],
     managers: [
-      { id: 1, full_name: 'Медина Орозова', email: 'medina@salon.test', role: 'owner', is_active: true, last_login_at: isoDaysFromNow(0, 9, 15), created_at: isoDaysFromNow(-120) },
-      { id: 2, full_name: 'Тимур Жумабеков', email: 'timur@salon.test', role: 'admin', is_active: true, last_login_at: isoDaysFromNow(-1, 18, 0), created_at: isoDaysFromNow(-90) },
-      { id: 3, full_name: 'Аида Бекова', email: 'aida@salon.test', role: 'manager', is_active: false, last_login_at: isoDaysFromNow(-14, 10, 0), created_at: isoDaysFromNow(-70) },
+      { id: 1, full_name: 'Медина Орозова', email: 'medina@dalfy.test', role: 'owner', is_active: true, last_login_at: isoDaysFromNow(0, 9, 15), created_at: isoDaysFromNow(-120) },
+      { id: 2, full_name: 'Тимур Жумабеков', email: 'timur@dalfy.test', role: 'admin', is_active: true, last_login_at: isoDaysFromNow(-1, 18, 0), created_at: isoDaysFromNow(-90) },
+      { id: 3, full_name: 'Аида Бекова', email: 'aida@dalfy.test', role: 'manager', is_active: false, last_login_at: isoDaysFromNow(-14, 10, 0), created_at: isoDaysFromNow(-70) },
     ],
     seq: { service: 8, staffMember: 5, schedule: 9, booking: 7, document: 4, stopCategory: 5, manager: 4 },
   };
